@@ -44,5 +44,5 @@ module Sudoku_game = struct
   let do_move (board: Sudoku_board.t) (move: move): (Sudoku_board.t, error_states) result = failwith "Not implented"
   (** Fails if attempting to change a fixed cell or the user makes a blatantly invalid move, like adding a 2 to a row that already contains a 2. If the move succeeds the updated board will be returned *)
 
-  let generate_hint (board: Sudoku_board.t): move option = failwith "Not implented"
+  let generate_hint (board: Sudoku_board.t): hint = failwith "Not implented"
 end

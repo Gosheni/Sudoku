@@ -39,7 +39,7 @@ module Sudoku_game : sig
   val do_move : Sudoku_board.t -> move -> (Sudoku_board.t, error_states) result
   (** Fails if attempting to change a fixed cell or the user makes a blatantly invalid move, like adding a 2 to a row that already contains a 2. If the move succeeds the updated board will be returned *)
 
-  val generate_hint : Sudoku_board.t -> move option
+  val generate_hint : Sudoku_board.t -> hint
 end
 
 
