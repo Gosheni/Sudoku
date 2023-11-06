@@ -1,0 +1,5 @@
+(test
+ (name tests)
+ (libraries core core_unix core_unix.sys_unix stdio ounit2 lib)
+ (preprocess
+  (pps ppx_jane)))
