@@ -22,8 +22,18 @@ module Sudoku_board : sig
 
   (** Generates a solved sudoko with all the cells filled *)
 
-  val de_serialize : string -> t option
-  val serialize : t -> string
+  type json = [
+    | `Assoc of (string * json) list
+    | `Bool of bool
+    | `Float of float
+    | `Int of int
+    | `List of json list
+    | `Null
+    | `String of string
+  ]
+
+  val de_serialize : string -> json option
+  val serialize : json -> string
   val pretty_print: t -> string
 end
 
