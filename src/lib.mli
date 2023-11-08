@@ -7,6 +7,7 @@ module Sudoku_board : sig
   type t
   type difficulty = Difficulty of int 
 
+  val empty: t
   (* Convenience methods *)
   (** First index is the row *)
   val get : t -> int -> int -> element option
@@ -23,7 +24,7 @@ module Sudoku_board : sig
 
   val de_serialize : string -> t option
   val serialize : t -> string
-
+  val pretty_print: t -> string
 end
 
 module Sudoku_game : sig

@@ -49,6 +49,17 @@ module Sudoku_board  = struct
         loop_rows 0 true
         
 
+  let empty: t = 
+    let a = Map.empty(module Int) in
+    let empty_row = 
+      List.init 9 ~f:(fun _ -> Empty) |> List.foldi ~init: a ~f: (fun index map element -> 
+        Map.add_exn map ~key: index ~data: element
+        ) in 
+  
+    List.init 9 ~f:(fun _ -> empty_row) |> List.foldi ~init: a ~f: (fun index map element -> 
+        Map.add_exn map ~key: index ~data: element
+        ) 
+
   let generate_random _ = failwith "Not implemented"
   (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
   let generate_degenerate (board: t) (difficulty: difficulty): t = failwith "Not implemented"
@@ -60,6 +71,31 @@ module Sudoku_board  = struct
 
   let de_serialize (str: string): t option = None
   let serialize (_: t): string = ""
+  
+  let pretty_print (board: t): string = 
+    let pretty_print_row (row: row): string = 
+      (Map.fold row ~init: "" ~f: (fun ~key:col_num ~data:value accum -> 
+        let block =  (element_to_string value) ^ " " in
+        if col_num mod 3 = 0 then 
+          accum ^ "| " ^ block
+        else 
+          accum ^ block
+      )) ^ "|"
+    in 
+
+    let divider_line: string = String.init (4 + (3+4) * 3) ~f: (fun _ -> '-') ^ "\n"
+  in 
+
+    (Map.fold board ~init:"" ~f:(fun ~key:row_num ~data:row_data accum -> 
+      let row = pretty_print_row (row_data) ^ "\n"
+    in 
+    if row_num mod 3 = 0 then 
+        accum ^ divider_line ^ row 
+    else 
+        accum ^ row 
+    )
+    ) ^ divider_line
+
 
 end
 
