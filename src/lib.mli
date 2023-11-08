@@ -23,7 +23,7 @@ module Sudoku_board : sig
 
   val de_serialize : string -> t option
   val serialize : t -> string
-
+  val pretty_print: t -> string
 end
 
 module Sudoku_game : sig
