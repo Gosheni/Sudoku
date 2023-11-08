@@ -1,6 +1,7 @@
 [@@@ocaml.warning "-27"]
 
 open Core 
+
 module Sudoku_board  = struct
   type element =
     | Empty
@@ -40,9 +41,22 @@ module Sudoku_board  = struct
   let solve (_: t): t option = None 
 
   (** Generates a solved sudoko with all the cells filled *)
-
-  let de_serialize (str: string): t option = None
-  let serialize (_: t): string = ""
+  type json = [
+    | `Assoc of (string * json) list
+    | `Bool of bool
+    | `Float of float
+    | `Int of int
+    | `List of json list
+    | `Null
+    | `String of string
+  ]
+  let de_serialize (str: string): json option =
+    try
+      Some (Yojson.Basic.from_string str)
+    with Yojson.Json_error _ -> None
+  
+  let serialize (obj: json): string =
+    Yojson.Basic.to_string obj
   
   let pretty_print (board: t): string = 
     let pretty_print_row (row: row): string = 
