@@ -8,7 +8,7 @@ module Sudoku_board  = struct
     | Volatile of int  (** Contains the board state including which *)
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row , Int.comparator_witness) Map.t
-  type difficulty = int 
+  type difficulty = Difficulty of int 
 
   let element_to_string = function 
   | Empty -> " "
@@ -18,8 +18,36 @@ module Sudoku_board  = struct
     let open Option.Let_syntax in
     Map.find board x 
     >>= Fn.flip Map.find y 
-    
-  let is_solved (board: t): bool = false
+  
+  let fold_row ((acc, seen) : bool * int list) (elem : element) = 
+    match elem with
+    | Empty -> false, seen
+    | Fixed a -> acc && true, a::seen
+    | Volatile a -> acc && true, a::seen
+
+  let is_solved (board: t): bool = 
+    if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then (* check row keys are 0-8 *)
+      false (* if not, return false (invalid board) *)
+    else
+      let is_solved_row (row : row) = 
+        if Map.keys row |> List.equal equal_int (List.range 0 9) |> not then (* check col keys are 0-8*) 
+          false
+        else
+          let row_data = Map.data row in
+          let filled, seen = List.fold row_data ~init:(true, []) ~f:fold_row in
+          if filled then 
+            seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 0 9)
+        else 
+          false
+      in 
+      let rec loop_rows (x : int) (acc : bool) = 
+        if x >= 9 then acc else (* iterate rows 1 through *)
+        Map.find_exn board x (* we already checked keys so find_exn should be fine *)
+        |> is_solved_row
+        |> (fun valid_row -> loop_rows (x + 1) (acc && valid_row))
+      in
+        loop_rows 0 true
+        
 
   let generate_random _ = failwith "Not implemented"
   (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)

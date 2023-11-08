@@ -1,11 +1,11 @@
-module Sudoku_board : sig
+module Sudoku_board : sig 
   type element =
     | Empty
     | Fixed of int
     | Volatile of int  (** Contains the board state including which *)
 
   type t
-  type difficulty = int 
+  type difficulty = Difficulty of int 
 
   (* Convenience methods *)
   (** First index is the row *)
