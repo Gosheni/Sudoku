@@ -7,6 +7,7 @@ module Sudoku_board : sig
   type t
   type difficulty = int 
 
+  val empty: t
   (* Convenience methods *)
   (** First index is the row *)
   val get : t -> int -> int -> element option
