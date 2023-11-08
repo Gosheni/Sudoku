@@ -6,9 +6,13 @@ module Sudoku_board  = struct
     | Empty
     | Fixed of int
     | Volatile of int  (** Contains the board state including which *)
-  type t = (int, (int, element, Int.comparator_witness) Map.t , Int.comparator_witness) Map.t
+  type row = (int, element, Int.comparator_witness) Map.t
+  type t = (int, row , Int.comparator_witness) Map.t
   type difficulty = int 
 
+  let element_to_string = function 
+  | Empty -> " "
+  | Fixed a | Volatile a -> Int.to_string a
 
   let get (board: t) (x: int) (y: int): element option = 
     let open Option.Let_syntax in
