@@ -6,9 +6,9 @@ module Sudoku_board  = struct
   type element =
     | Empty
     | Fixed of int
-    | Volatile of int  (** Contains the board state including which *)
-  type row = (int, element, Int.comparator_witness) Map.t
-  type t = (int, row , Int.comparator_witness) Map.t
+    | Volatile of int  (** Contains the board state including which *) [@@deriving yojson]
+  type row = (int, element, Int.comparator_witness) Map.t 
+  type t = (int, row , Int.comparator_witness) Map.t 
   type difficulty = int 
 
   let element_to_string = function 
@@ -41,23 +41,45 @@ module Sudoku_board  = struct
   let solve (_: t): t option = None 
 
   (** Generates a solved sudoko with all the cells filled *)
-  type json = [
-    | `Assoc of (string * json) list
-    | `Bool of bool
-    | `Float of float
-    | `Int of int
-    | `List of json list
-    | `Null
-    | `String of string
-  ]
-  let de_serialize (str: string): json option =
-    try
-      Some (Yojson.Basic.from_string str)
-    with Yojson.Json_error _ -> None
-  
-  let serialize (obj: json): string =
-    Yojson.Basic.to_string obj
-  
+  type json = Yojson.Safe.t
+
+  let row_to_yojson (row: row): json option =
+    if Map.is_empty row then None
+    else Some (`Assoc (Map.to_alist row |> 
+      List.map ~f:(fun (k, v) -> (string_of_int k, element_to_yojson v))))
+
+  let yojson_to_row (obj: json): row =
+    match obj with
+    | `Assoc assoc ->
+      let elements =
+        List.filter_map assoc ~f:(fun (key, value) ->
+          match int_of_string_opt key, element_of_yojson value with
+          | Some key_int, Ok element -> 
+            Some (key_int, element)
+          | _ -> None)
+      in
+      Map.of_alist_exn (module Int) elements
+    | _ -> Map.empty (module Int)
+
+  let de_serialize (map: t): json option =
+    let json_rows = Map.map map ~f:row_to_yojson in
+    let filtered_json_rows = Map.filter_map json_rows ~f:Fn.id in
+
+    if Map.is_empty filtered_json_rows then None
+    else Some (`Assoc (Map.to_alist filtered_json_rows |> 
+      List.map ~f:(fun (k, v) -> (string_of_int k, v))))    
+    
+  let serialize (obj: json): t =
+    match obj with
+    | `Assoc assoc ->
+      let rows = List.filter_map assoc ~f:(fun (key, value) ->
+        match int_of_string_opt key, yojson_to_row value with
+        | Some key_int, row -> Some (key_int, row)
+        | _ -> None)
+      in
+      Map.of_alist_exn (module Int) rows
+    | _ -> Map.empty (module Int)
+            
   let pretty_print (board: t): string = 
     let pretty_print_row (row: row): string = 
       (Map.fold row ~init: "" ~f: (fun ~key:col_num ~data:value accum -> 

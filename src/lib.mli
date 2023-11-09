@@ -2,8 +2,8 @@ module Sudoku_board : sig
   type element =
     | Empty
     | Fixed of int
-    | Volatile of int  (** Contains the board state including which *)
-
+    | Volatile of int  (** Contains the board state including which *) [@@deriving yojson]
+  type row
   type t
   type difficulty = int 
 
@@ -21,19 +21,13 @@ module Sudoku_board : sig
   val solve: t -> t option 
 
   (** Generates a solved sudoko with all the cells filled *)
+  type json = Yojson.Safe.t
 
-  type json = [
-    | `Assoc of (string * json) list
-    | `Bool of bool
-    | `Float of float
-    | `Int of int
-    | `List of json list
-    | `Null
-    | `String of string
-  ]
+  val row_to_yojson : row -> json option
+  val yojson_to_row : json -> row
 
-  val de_serialize : string -> json option
-  val serialize : json -> string
+  val de_serialize : t -> json option
+  val serialize : json -> t
   val pretty_print: t -> string
 end
 
