@@ -21,6 +21,13 @@ module Sudoku_board = struct
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
 
+  let set (board : t) (x : int) (y : int) (element : element) : t =
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
+    Map.update board x ~f:(fun row ->
+        match row with
+        | None -> assert false
+        | Some row -> Map.update row y ~f:(fun _ -> element))
+
   let is_valid (board : t) : bool = false
   let is_solved (board : t) : bool = false
 
@@ -35,13 +42,6 @@ module Sudoku_board = struct
     List.init 9 ~f:(fun _ -> empty_row)
     |> List.foldi ~init:a ~f:(fun index map element ->
            Map.add_exn map ~key:index ~data:element)
-
-  let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
-    Map.update board x ~f:(fun row ->
-        match row with
-        | None -> assert false
-        | Some row -> Map.update row y ~f:(fun _ -> element))
 
   (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
   let generate_random _ = failwith "Not implemented"
