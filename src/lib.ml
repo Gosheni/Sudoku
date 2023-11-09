@@ -19,7 +19,7 @@ module Sudoku_board  = struct
     let open Option.Let_syntax in
     Map.find board x 
     >>= Fn.flip Map.find y 
-    
+  let is_valid (board: t): bool = false
   let is_solved (board: t): bool = false
 
   let empty: t = 
@@ -32,6 +32,13 @@ module Sudoku_board  = struct
     List.init 9 ~f:(fun _ -> empty_row) |> List.foldi ~init: a ~f: (fun index map element -> 
         Map.add_exn map ~key: index ~data: element
         ) 
+
+  let set (board : t) (x : int) (y : int) (element : element): t =
+  assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
+  Map.update board x ~f:(fun row ->
+      match row with
+      | None -> assert false
+      | Some row -> Map.update row y ~f:(fun _ -> element))
 
   let generate_random _ = failwith "Not implemented"
   (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
@@ -79,7 +86,7 @@ module Sudoku_board  = struct
       in
       Map.of_alist_exn (module Int) rows
     | _ -> Map.empty (module Int)
-            
+
   let pretty_print (board: t): string = 
     let pretty_print_row (row: row): string = 
       (Map.fold row ~init: "" ~f: (fun ~key:col_num ~data:value accum -> 
@@ -109,7 +116,7 @@ end
 
 module Sudoku_game = struct
   (** Fixed cell is used when the user attempts to change a cell that is fixed. Already present is used when the user's move would make a row/column/3x3 square have a duplicate entry *)
-  type error_states = Fixed_cell | Already_present
+  type error_states = Fixed_cell | Already_present | Invalid_position
   type move = { x : int; y : int; value : int option }
 
   type hint =
@@ -117,8 +124,21 @@ module Sudoku_game = struct
     | Suggested_move of move
     | Alread_solved
 
-  let do_move (board: Sudoku_board.t) (move: move): (Sudoku_board.t, error_states) result = failwith "Not implented"
-  (** Fails if attempting to change a fixed cell or the user makes a blatantly invalid move, like adding a 2 to a row that already contains a 2. If the move succeeds the updated board will be returned *)
-
+  let do_move (board: Sudoku_board.t) (move: move): (Sudoku_board.t, error_states) result = 
+    let open Sudoku_board in
+    match (get board move.x move.y, move.value) with
+    | None, _ ->
+        assert false
+        (* Either the board is not the expected 9 x 9 grid or an invalid position was used *)
+    | Some (Fixed _), _ -> Error Fixed_cell
+    | Some Empty, None -> Error Already_present
+    | Some (Volatile element), Some move_value when element = move_value ->
+        Error Already_present
+    | Some (Volatile _), None ->
+        Ok (set board move.x move.y @@ Empty)
+        (* Removing something from a valid board cannot make it invalid *)
+    | Some (Volatile _ | Empty), Some move_value ->
+        let new_board = set board move.x move.y @@ Volatile move_value in
+        if is_valid new_board then Ok new_board else Error Invalid_position
   let generate_hint (board: Sudoku_board.t): hint = failwith "Not implented"
 end
