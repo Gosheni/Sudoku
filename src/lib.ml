@@ -64,6 +64,7 @@ module Sudoku_board = struct
       >>| fun a -> `Assoc a
     in
 
+    (* TODO: Should we filter errors? *)
     map
     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
     |> Map.filter_map ~f:Fn.id
