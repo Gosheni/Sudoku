@@ -26,8 +26,6 @@ module Sudoku_board : sig
   type json = Yojson.Safe.t
   (** Generates a solved sudoko with all the cells filled *)
 
-  val row_to_yojson : row -> json option
-  val yojson_to_row : json -> row
   val de_serialize : t -> json option
   val serialize : json -> t
   val pretty_print : t -> string
