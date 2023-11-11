@@ -16,6 +16,8 @@ module Sudoku_board : sig
 
   val get : t -> int -> int -> element option
   val set : t -> int -> int -> element -> t
+  val set_forced : t -> int -> int -> element -> t
+  val is_valid : t -> bool 
   val is_solved : t -> bool
   val generate_random : unit -> t
 

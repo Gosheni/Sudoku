@@ -21,47 +21,30 @@ module Sudoku_board = struct
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
 
-  let is_valid (board : t) : bool = true
-
-  let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
-    Map.update board x ~f:(fun row ->
-        match row with
-        | None -> assert false
-        | Some row -> Map.update row y ~f:(fun _ -> element))
-  
-  let fold_check_non_empty ((acc, seen) : bool * int list) (elem : element) = 
-    match elem with
-    | Empty -> false, seen
-    | Fixed a | Volatile a -> acc, a::seen
-
-  let is_solved_list (lst : element list) : bool = 
-    let filled, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
-    if filled then 
-      seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 1 10)
-    else 
-      false
-
-  (* is_solved row also checks that the keys of the maps in board are correct *)
-  let is_solved_row (board: t): bool = 
+  let check_keys (board : t) : bool = 
     if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then (* check row keys are 0-8 *)
       false (* if not, return false (invalid board) *)
-    else
-      let is_solved_row_helper (row : row) = 
-        if Map.keys row |> List.equal equal_int (List.range 0 9) |> not then (* check col keys are 0-8*) 
-          false
-        else
-          Map.data row |> is_solved_list
-      in 
-      let rec loop_rows (x : int) (acc : bool) = 
+    else 
+      let check_rows (row : row) = Map.keys row |> List.equal equal_int (List.range 0 9) in (* check col keys are 0-8*) 
+      let rec loop_rows (row_idx : int) acc = 
+        if row_idx >= 9 then acc else
+        Map.find_exn board row_idx (* we already checked keys so find_exn should be fine *)
+        |> check_rows
+        |> (fun valid_row -> loop_rows (row_idx + 1) (acc && valid_row))
+      in
+        loop_rows 0 true
+
+  let check_rows (board: t) (func_to_check : element list -> bool): bool = 
+    let check_row (row : row) = row |> Map.data |> func_to_check in
+    let rec loop_rows (x : int) (acc : bool) = 
         if x >= 9 then acc else (* iterate rows 1 through *)
         Map.find_exn board x (* we already checked keys so find_exn should be fine *)
-        |> is_solved_row_helper
+        |> check_row
         |> (fun valid_row -> loop_rows (x + 1) (acc && valid_row))
       in
         loop_rows 0 true
 
-  let is_solved_block (board : t) : bool = 
+  let check_block (board : t) (func_to_check : element list -> bool) : bool = 
     let check_block (block_num : int) = 
       let row_lower = (block_num / 3) * 3 in
       let row_upper = row_lower + 3 in
@@ -75,7 +58,7 @@ module Sudoku_board = struct
           | Some(elem) -> loop_block (x + 1) y (elem::acc)
       in
         let curr_block = loop_block row_lower col_lower [] in
-        is_solved_list curr_block
+        func_to_check curr_block
     in
     let rec loop_blocks (block_num : int) (acc : bool) = 
       if block_num >= 9 then acc else
@@ -84,7 +67,7 @@ module Sudoku_board = struct
     in
       loop_blocks 0 true
 
-  let is_solved_col (board : t) : bool = 
+  let check_cols (board : t) (func_to_check : element list -> bool) : bool = 
     let check_col (col_num : int) = 
       let rec loop_rows (row_idx : int) acc = 
         if row_idx >= 9 then acc else
@@ -93,7 +76,7 @@ module Sudoku_board = struct
           | Some(elem) -> loop_rows (row_idx + 1) (elem::acc)
       in
         let curr_col = loop_rows 0 [] in
-        is_solved_list curr_col
+        func_to_check curr_col
     in
     let rec loop_cols (col_num : int) (acc : bool) = 
       if col_num >= 9 then acc else
@@ -102,10 +85,51 @@ module Sudoku_board = struct
     in
       loop_cols 0 true
 
+  let fold_check_non_empty ((acc, seen) : bool * int list) (elem : element) = 
+    match elem with
+    | Empty -> false, seen
+    | Fixed a | Volatile a -> acc, a::seen
+
+  let is_solved_list (lst : element list) : bool = 
+    let filled, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
+    if filled then 
+      seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 1 10)
+    else 
+      false
+
   let is_solved (board : t) : bool =
-    is_solved_row board && 
-    is_solved_col board && 
-    is_solved_block board
+    check_keys board &&
+    check_rows board is_solved_list &&
+    check_cols board is_solved_list && 
+    check_block board is_solved_list
+
+  let is_valid_lst (lst : element list) : bool = 
+    let _, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
+    let unique_seen = List.dedup_and_sort seen ~compare:compare_int in
+    let no_dups = List.length seen = (List.length unique_seen) in
+    let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
+    no_dups && no_invalid
+
+  let is_valid (board : t) : bool = 
+    check_keys board &&
+    check_rows board is_valid_lst &&
+    check_cols board is_valid_lst && 
+    check_block board is_valid_lst
+
+  let set (board : t) (x : int) (y : int) (element : element) : t =
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
+    Map.update board x ~f:(fun row ->
+        match row with
+        | None -> assert false
+        | Some row -> Map.update row y ~f:(fun _ -> element))
+
+  (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
+  let set_forced (board : t) (x : int) (y : int) (element : element) : t =
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
+    Map.update board x ~f:(fun row ->
+        match row with
+        | None -> assert false
+        | Some row -> Map.update row y ~f:(fun _ -> element))
 
   let empty : t =
     let a = Map.empty (module Int) in

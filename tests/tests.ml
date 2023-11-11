@@ -32,8 +32,12 @@ let create_board elems_list =
       let row = i / 9 in
       let col = i mod 9 in
       let elem_int = List.nth_exn elems_list row |> Fn.flip List.nth_exn col in
-      Sudoku_board.set acc_board row col (Volatile elem_int) 
-      |> loop_board (i + 1) 
+      if elem_int = 0 then 
+        Sudoku_board.set_forced acc_board row col Empty
+        |> loop_board (i + 1)
+      else
+        Sudoku_board.set_forced acc_board row col (Fixed elem_int) 
+        |> loop_board (i + 1) 
   in
   loop_board 0 Sudoku_board.empty
 
@@ -76,14 +80,49 @@ let example_invalid_board_ints =
 
 let example_invalid = create_board example_invalid_board_ints
 
+let example_board_ints_3 = 
+  [[0;0;6;0;0;0;0;0;1];
+   [0;7;0;0;6;0;0;5;0];
+   [8;0;0;1;0;3;2;0;0];
+   [0;0;5;0;4;0;8;0;0];
+   [0;4;0;7;0;2;0;9;0];
+   [0;0;8;0;1;0;7;0;0];
+   [0;0;1;2;0;5;0;0;3];
+   [0;6;0;0;7;0;0;8;0];
+   [2;0;0;0;0;0;4;0;0]]
+
+let example_board_3 = create_board example_board_ints_3
+
+(* this + above can probably be used to test a solve function once we implement that *)
+let example_board_ints_3_solved = 
+  [[5;3;6;8;2;7;9;4;1];
+   [1;7;2;9;6;4;3;5;8];
+   [8;9;4;1;5;3;2;6;7];
+   [7;1;5;3;4;9;8;2;6];
+   [6;4;3;7;8;2;1;9;5];
+   [9;2;8;5;1;6;7;3;4];
+   [4;8;1;2;9;5;6;7;3];
+   [3;6;9;4;7;1;5;8;2];
+   [2;5;7;6;3;8;4;1;9]]
+
+let example_board_3_solved = create_board example_board_ints_3_solved
+
 let test_is_solved _ =
   assert_equal true @@ Sudoku_board.is_solved example_board_1;
   assert_equal false @@ Sudoku_board.is_solved Sudoku_board.empty;
   assert_equal true @@ Sudoku_board.is_solved example_board_2;
   assert_equal false @@ Sudoku_board.is_solved example_invalid
 
+let test_is_valid _ =
+  assert_equal true @@ Sudoku_board.is_valid example_board_1;
+  assert_equal true @@ Sudoku_board.is_valid example_board_2;
+  assert_equal false @@ Sudoku_board.is_valid example_invalid;
+  assert_equal true @@ Sudoku_board.is_valid example_board_3;
+  assert_equal true @@ Sudoku_board.is_valid example_board_3_solved
+
 let series = "Tests" >::: 
 [ "test pretty print" >:: test_pretty_printer;
   "test is_solved"    >:: test_is_solved;
+  "test is_valid"     >:: test_is_valid;
 ]
 let () = run_test_tt_main series
