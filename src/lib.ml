@@ -26,29 +26,55 @@ module Sudoku_board  = struct
     | Fixed a -> acc && true, a::seen
     | Volatile a -> acc && true, a::seen
 
-  let is_solved (board: t): bool = 
+  let is_solved_list (lst : element list) : bool = 
+    let filled, seen = List.fold lst ~init:(true, []) ~f:fold_row in
+    if filled then 
+      seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 0 9)
+    else 
+      false
+
+  let is_solved_row (board: t): bool = 
     if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then (* check row keys are 0-8 *)
       false (* if not, return false (invalid board) *)
     else
-      let is_solved_row (row : row) = 
+      let is_solved_row_helper (row : row) = 
         if Map.keys row |> List.equal equal_int (List.range 0 9) |> not then (* check col keys are 0-8*) 
           false
         else
-          let row_data = Map.data row in
-          let filled, seen = List.fold row_data ~init:(true, []) ~f:fold_row in
-          if filled then 
-            seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 0 9)
-        else 
-          false
+          Map.data row |> is_solved_list
       in 
       let rec loop_rows (x : int) (acc : bool) = 
         if x >= 9 then acc else (* iterate rows 1 through *)
         Map.find_exn board x (* we already checked keys so find_exn should be fine *)
-        |> is_solved_row
+        |> is_solved_row_helper
         |> (fun valid_row -> loop_rows (x + 1) (acc && valid_row))
       in
         loop_rows 0 true
-        
+
+  let is_solved_block (board : t) : bool = 
+    let get_elems_for_block (block_num : int) = 
+      let row_lower = (block_num / 3) * 3 in
+      let row_upper = row_lower + 3 in
+      let col_lower = (block_num mod 3) * 3 in
+      let col_upper = col_lower + 3 in
+      let rec loop_block x y acc = 
+        if y >= col_upper then acc else
+        if x >= row_upper then loop_block row_lower (y + 1) acc else
+        match get board x y with
+          | None -> loop_block (x + 1) y acc
+          | Some(elem) -> loop_block (x + 1) y (elem::acc)
+      in
+        let curr_block = loop_block row_lower col_lower [] in
+        is_solved_list curr_block
+    in
+    let rec loop_blocks (block_num : int) (acc : bool) = 
+      if block_num >= 9 then acc else
+      get_elems_for_block block_num
+      |> (fun valid_block -> loop_blocks (block_num + 1) (acc && valid_block))
+    in
+      loop_blocks 0 true
+    
+
 
   let empty: t = 
     let a = Map.empty(module Int) in
