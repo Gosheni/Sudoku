@@ -21,7 +21,7 @@ module Sudoku_board = struct
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
 
-  let is_valid (board : t) : bool = false
+  let is_valid (board : t) : bool = true
 
   let set (board : t) (x : int) (y : int) (element : element) : t =
     assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
@@ -29,9 +29,84 @@ module Sudoku_board = struct
         match row with
         | None -> assert false
         | Some row -> Map.update row y ~f:(fun _ -> element))
-
   
-  let is_solved (board : t) : bool = false
+  let fold_check_non_empty ((acc, seen) : bool * int list) (elem : element) = 
+    match elem with
+    | Empty -> false, seen
+    | Fixed a -> acc && true, a::seen
+    | Volatile a -> acc && true, a::seen
+
+  let is_solved_list (lst : element list) : bool = 
+    let filled, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
+    if filled then 
+      seen |> List.sort ~compare:compare_int |> List.equal equal_int (List.range 1 10)
+    else 
+      false
+
+  (* is_solved row also checks that the keys of the maps in board are correct *)
+  let is_solved_row (board: t): bool = 
+    if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then (* check row keys are 0-8 *)
+      false (* if not, return false (invalid board) *)
+    else
+      let is_solved_row_helper (row : row) = 
+        if Map.keys row |> List.equal equal_int (List.range 0 9) |> not then (* check col keys are 0-8*) 
+          false
+        else
+          Map.data row |> is_solved_list
+      in 
+      let rec loop_rows (x : int) (acc : bool) = 
+        if x >= 9 then acc else (* iterate rows 1 through *)
+        Map.find_exn board x (* we already checked keys so find_exn should be fine *)
+        |> is_solved_row_helper
+        |> (fun valid_row -> loop_rows (x + 1) (acc && valid_row))
+      in
+        loop_rows 0 true
+
+  let is_solved_block (board : t) : bool = 
+    let check_block (block_num : int) = 
+      let row_lower = (block_num / 3) * 3 in
+      let row_upper = row_lower + 3 in
+      let col_lower = (block_num mod 3) * 3 in
+      let col_upper = col_lower + 3 in
+      let rec loop_block x y acc = 
+        if y >= col_upper then acc else
+        if x >= row_upper then loop_block row_lower (y + 1) acc else
+        match get board x y with
+          | None -> loop_block (x + 1) y acc
+          | Some(elem) -> loop_block (x + 1) y (elem::acc)
+      in
+        let curr_block = loop_block row_lower col_lower [] in
+        is_solved_list curr_block
+    in
+    let rec loop_blocks (block_num : int) (acc : bool) = 
+      if block_num >= 9 then acc else
+      check_block block_num
+      |> (fun valid_block -> loop_blocks (block_num + 1) (acc && valid_block))
+    in
+      loop_blocks 0 true
+
+  let is_solved_col (board : t) : bool = 
+    let check_col (col_num : int) = 
+      let rec loop_rows (row_idx : int) acc = 
+        if row_idx >= 9 then acc else
+        match get board row_idx col_num with
+          | None -> failwith "tried to access invalid element or board incorrectly structured"
+          | Some(elem) -> loop_rows (row_idx + 1) (elem::acc)
+      in
+        let curr_col = loop_rows 0 [] in
+        is_solved_list curr_col
+    in
+    let rec loop_cols (col_num : int) (acc : bool) = 
+      if col_num >= 9 then acc else
+      check_col col_num
+      |> (fun valid_col -> loop_cols (col_num + 1) (acc && valid_col))
+    in
+      loop_cols 0 true
+
+  let is_solved (board : t) : bool =
+    is_solved_row board && 
+    is_solved_col board && 
+    is_solved_block board
 
   let empty : t =
     let a = Map.empty (module Int) in
@@ -40,7 +115,6 @@ module Sudoku_board = struct
       |> List.foldi ~init:a ~f:(fun index map element ->
              Map.add_exn map ~key:index ~data:element)
     in
-
     List.init 9 ~f:(fun _ -> empty_row)
     |> List.foldi ~init:a ~f:(fun index map element ->
            Map.add_exn map ~key:index ~data:element)
@@ -57,8 +131,8 @@ module Sudoku_board = struct
   type json = Yojson.Safe.t
   (** Generates a solved sudoko with all the cells filled *)
 
-  let de_serialize (map : t) : json option =
-    let convert_map_content_to_json value_map data =
+  let de_serialize (map : t) : json option = failwith "unimplemented"
+    (* let convert_map_content_to_json value_map data =
       let open Option.Let_syntax in
       (if Map.is_empty data then None else Some data)
       >>| Map.to_alist
@@ -70,11 +144,11 @@ module Sudoku_board = struct
     map
     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
     |> Map.filter_map ~f:Fn.id
-    |> convert_map_content_to_json Fn.id
+    |> convert_map_content_to_json Fn.id *)
 
-  let serialize (obj : json) : t =
+  let serialize (obj : json) : t = failwith "unimplemented"
     (* TODO: Add error handling *)
-    let convert_to_map_if_possible obj ~f:filter_map =
+    (* let convert_to_map_if_possible obj ~f:filter_map =
       match obj with
       | `Assoc assoc ->
           List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
@@ -89,7 +163,7 @@ module Sudoku_board = struct
     convert_to_map_if_possible obj ~f:(fun (key, value) ->
         match (int_of_string_opt key, yojson_to_row value) with
         | Some key_int, row -> Some (key_int, row)
-        | _ -> None)
+        | _ -> None) *)
 
   let pretty_print (board : t) : string =
     let pretty_print_row (row : row) : string =
