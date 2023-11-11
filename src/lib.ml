@@ -33,8 +33,7 @@ module Sudoku_board = struct
   let fold_check_non_empty ((acc, seen) : bool * int list) (elem : element) = 
     match elem with
     | Empty -> false, seen
-    | Fixed a -> acc && true, a::seen
-    | Volatile a -> acc && true, a::seen
+    | Fixed a | Volatile a -> acc, a::seen
 
   let is_solved_list (lst : element list) : bool = 
     let filled, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
