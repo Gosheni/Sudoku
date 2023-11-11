@@ -1,6 +1,7 @@
 (library
  (name lib)
  (modules lib)
- (libraries core)
+ (libraries core
+ yojson)
  (preprocess
-  (pps ppx_jane bisect_ppx)))
+  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))

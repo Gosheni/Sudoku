@@ -3,43 +3,40 @@ module Sudoku_board : sig
     | Empty
     | Fixed of int
     | Volatile of int  (** Contains the board state including which *)
+  [@@deriving yojson]
 
+  type row
   type t
-  type difficulty = Difficulty of int 
 
-  val empty: t
-  (* Convenience methods *)
+  type difficulty = int
+
+
+  val empty : t
   (** First index is the row *)
+
   val get : t -> int -> int -> element option
+  val set : t -> int -> int -> element -> t
   val is_solved : t -> bool
-
   val generate_random : unit -> t
+
+  val generate_degenerate : t -> difficulty -> t
   (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
-  val generate_degenerate: t -> difficulty -> t 
 
-  (** *)
-  val solve: t -> t option 
+  val solve : t -> t option
+  (** Solves a sudoku while requiring the solution to be unique *)
 
+  type json = Yojson.Safe.t
   (** Generates a solved sudoko with all the cells filled *)
 
-  type json = [
-    | `Assoc of (string * json) list
-    | `Bool of bool
-    | `Float of float
-    | `Int of int
-    | `List of json list
-    | `Null
-    | `String of string
-  ]
-
-  val de_serialize : string -> json option
-  val serialize : json -> string
-  val pretty_print: t -> string
+  val de_serialize : t -> json option
+  val serialize : json -> t
+  val pretty_print : t -> string
 end
 
 module Sudoku_game : sig
   (** Fixed cell is used when the user attempts to change a cell that is fixed. Already present is used when the user's move would make a row/column/3x3 square have a duplicate entry *)
-  type error_states = Fixed_cell | Already_present
+  type error_states = Fixed_cell | Already_present | Invalid_position
+
   type move = { x : int; y : int; value : int option }
 
   type hint =
@@ -52,6 +49,5 @@ module Sudoku_game : sig
 
   val generate_hint : Sudoku_board.t -> hint
 end
-
 
 (* Use monads *)
