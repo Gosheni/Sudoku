@@ -28,7 +28,7 @@ We implement the game Sudoko including:
 
 4. **Include a mock of a use of your application, along the lines of the Minesweeper example above but showing the complete protocol.**
 
-    ``` 
+    ``` sh
     $ ./sudoku.exe init  # initialize a new game
         1 2 3   4 5 6   7 8 9
       -------------------------
@@ -136,13 +136,6 @@ We implement the game Sudoko including:
     Current board saved to new_path.json
 
     ```
-
-board
-move
-invalid move
-hint
-solve
-
 
 5. **Also include a brief list of what order you will implement features.**
     1. Initially we will work on our Sududo library that is the interface for updating and generating sudoku boards.
