@@ -117,18 +117,35 @@ let example_board_ints_3_solved =
 
 let example_board_3_solved = create_board example_board_ints_3_solved
 
+let example_board_ints_4 = 
+  [ 
+    [ 3; 0; 6; 5; 0; 8; 4; 0; 0 ];
+    [ 5; 2; 0; 0; 0; 0; 0; 0; 0 ];
+    [ 0; 8; 7; 0; 0; 0; 0; 3; 1 ];
+    [ 0; 0; 3; 0; 1; 0; 0; 8; 0 ];
+    [ 9; 0; 0; 8; 6; 3; 0; 0; 5 ];
+    [ 0; 5; 0; 0; 9; 0; 6; 0; 0 ];
+    [ 1; 3; 0; 0; 0; 0; 2; 5; 0 ];
+    [ 0; 0; 0; 0; 0; 0; 0; 7; 4 ];
+    [ 0; 0; 5; 2; 0; 6; 3; 0; 0 ];
+  ]
+
+let example_board_4 = create_board example_board_ints_4
+
 let test_is_solved _ =
   assert_equal true @@ Sudoku_board.is_solved example_board_1;
   assert_equal false @@ Sudoku_board.is_solved Sudoku_board.empty;
   assert_equal true @@ Sudoku_board.is_solved example_board_2;
-  assert_equal false @@ Sudoku_board.is_solved example_invalid
+  assert_equal false @@ Sudoku_board.is_solved example_invalid;
+  assert_equal false @@ Sudoku_board.is_solved example_board_4 
 
 let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_1;
   assert_equal true @@ Sudoku_board.is_valid example_board_2;
   assert_equal false @@ Sudoku_board.is_valid example_invalid;
   assert_equal true @@ Sudoku_board.is_valid example_board_3;
-  assert_equal true @@ Sudoku_board.is_valid example_board_3_solved
+  assert_equal true @@ Sudoku_board.is_valid example_board_3_solved;
+  assert_equal true @@ Sudoku_board.is_valid example_board_4
 
 let series =
   "Tests"

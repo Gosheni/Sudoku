@@ -16,21 +16,27 @@ module Sudoku_board : sig
   val set : t -> int -> int -> element -> t
   val set_forced : t -> int -> int -> element -> t
   val is_valid : t -> bool
+  (* checks that the board does not violate any sudoku rules, but could have empty values *)
   val is_solved : t -> bool
+  (* checks that the board is solved i.e. does not violate any sudoku rules and all cells are non-empty *)
   val generate_random : unit -> t
+  (* generate a random fully solved sudoku board *)
 
   val generate_degenerate : t -> difficulty -> t
-  (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
+  (* Takes a fully solved sudoko and removes elements randomly while making sure the resulting board is still solvable. 
+     Also takes an int that determines how many elements will be removed. This method expects a fully solved sudoku *)
 
   val solve : t -> t option
-  (** Solves a sudoku while requiring the solution to be unique *)
+  (* Solves a sudoku while requiring the solution to be unique *)
 
   type json = Yojson.Safe.t
-  (** Generates a solved sudoko with all the cells filled *)
 
   val de_serialize : t -> json option
+  (* given a board, convert it into a json object to save *)
   val serialize : json -> t
+  (* given a json, load the board from it and return the board *)
   val pretty_print : t -> string
+  (* debugging function, prints out the board in a human readable format *)
 end
 
 module Sudoku_game : sig
@@ -48,6 +54,7 @@ module Sudoku_game : sig
   (** Fails if attempting to change a fixed cell or the user makes a blatantly invalid move, like adding a 2 to a row that already contains a 2. If the move succeeds the updated board will be returned *)
 
   val generate_hint : Sudoku_board.t -> hint
+  (* Generate a hint for the user given the current board state *)
 end
 
 (* Use monads *)
