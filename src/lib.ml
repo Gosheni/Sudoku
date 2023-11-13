@@ -171,39 +171,39 @@ module Sudoku_board = struct
   type json = Yojson.Safe.t
   (** Generates a solved sudoko with all the cells filled *)
 
-  let de_serialize (map : t) : json option = failwith "unimplemented"
-  (* let convert_map_content_to_json value_map data =
-       let open Option.Let_syntax in
-       (if Map.is_empty data then None else Some data)
-       >>| Map.to_alist
-       >>| List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
-       >>| fun a -> `Assoc a
-     in
+  let de_serialize (map : t) : json option =
+    let convert_map_content_to_json value_map data =
+      let open Option.Let_syntax in
+      (if Map.is_empty data then None else Some data)
+      >>| Map.to_alist
+      >>| List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
+      >>| fun a -> `Assoc a
+    in
 
-     (* TODO: Should we filter errors? *)
-     map
-     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
-     |> Map.filter_map ~f:Fn.id
-     |> convert_map_content_to_json Fn.id *)
+    (* TODO: Should we filter errors? *)
+    map
+    |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
+    |> Map.filter_map ~f:Fn.id
+    |> convert_map_content_to_json Fn.id
 
-  let serialize (obj : json) : t = failwith "unimplemented"
-  (* TODO: Add error handling *)
-  (* let convert_to_map_if_possible obj ~f:filter_map =
-       match obj with
-       | `Assoc assoc ->
-           List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
-       | _ -> Map.empty (module Int)
-     in
-     let yojson_to_row =
-       convert_to_map_if_possible ~f:(fun (key, value) ->
-           match (int_of_string_opt key, element_of_yojson value) with
-           | Some key_int, Ok element -> Some (key_int, element)
-           | _ -> None)
-     in
-     convert_to_map_if_possible obj ~f:(fun (key, value) ->
-         match (int_of_string_opt key, yojson_to_row value) with
-         | Some key_int, row -> Some (key_int, row)
-         | _ -> None) *)
+  let serialize (obj : json) : t =
+    (* TODO: Add error handling *)
+    let convert_to_map_if_possible obj ~f:filter_map =
+      match obj with
+      | `Assoc assoc ->
+          List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
+      | _ -> Map.empty (module Int)
+    in
+    let yojson_to_row =
+      convert_to_map_if_possible ~f:(fun (key, value) ->
+          match (int_of_string_opt key, element_of_yojson value) with
+          | Some key_int, Ok element -> Some (key_int, element)
+          | _ -> None)
+    in
+    convert_to_map_if_possible obj ~f:(fun (key, value) ->
+        match (int_of_string_opt key, yojson_to_row value) with
+        | Some key_int, row -> Some (key_int, row)
+        | _ -> None)
 
   let pretty_print (board : t) : string =
     let pretty_print_row (row : row) : string =
