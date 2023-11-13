@@ -1,4 +1,4 @@
-module Sudoku_board : sig 
+module Sudoku_board : sig
   type element =
     | Empty
     | Fixed of int
@@ -7,9 +7,7 @@ module Sudoku_board : sig
 
   type row
   type t
-
   type difficulty = int
-
 
   val empty : t
   (** First index is the row *)
@@ -17,7 +15,7 @@ module Sudoku_board : sig
   val get : t -> int -> int -> element option
   val set : t -> int -> int -> element -> t
   val set_forced : t -> int -> int -> element -> t
-  val is_valid : t -> bool 
+  val is_valid : t -> bool
   val is_solved : t -> bool
   val generate_random : unit -> t
 
