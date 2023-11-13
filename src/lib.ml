@@ -206,6 +206,7 @@ module Sudoku_board = struct
         | _ -> None)
 
   let pretty_print (board : t) : string =
+    let left_spacing : string = "  " in
     let pretty_print_row (row : row) : string =
       Map.fold row ~init:"" ~f:(fun ~key:col_num ~data:value accum ->
           let block = element_to_string value ^ " " in
@@ -213,13 +214,17 @@ module Sudoku_board = struct
       ^ "|"
     in
 
+    let top_ruler : string = left_spacing ^ "  1 2 3   4 5 6   7 8 9\n" in
     let divider_line : string =
-      String.init (4 + ((3 + 4) * 3)) ~f:(fun _ -> '-') ^ "\n"
+      left_spacing ^ String.init (4 + ((3 + 4) * 3)) ~f:(fun _ -> '-') ^ "\n"
     in
 
-    Map.fold board ~init:"" ~f:(fun ~key:row_num ~data:row_data accum ->
-        let row = pretty_print_row row_data ^ "\n" in
-        if row_num mod 3 = 0 then accum ^ divider_line ^ row else accum ^ row)
+    top_ruler
+    ^ Map.fold board ~init:"" ~f:(fun ~key:row_num ~data:row_data accum ->
+          let row =
+            string_of_int (row_num + 1) ^ " " ^ pretty_print_row row_data ^ "\n"
+          in
+          if row_num mod 3 = 0 then accum ^ divider_line ^ row else accum ^ row)
     ^ divider_line
 end
 
@@ -232,7 +237,7 @@ module Sudoku_game = struct
   type hint =
     | Incorrect_cell of (int * int)
     | Suggested_move of move
-    | Alread_solved
+    | Already_solved
 
   let do_move (board : Sudoku_board.t) (move : move) :
       (Sudoku_board.t, error_states) result =
