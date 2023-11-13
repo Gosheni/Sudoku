@@ -237,7 +237,7 @@ module Sudoku_game = struct
   type hint =
     | Incorrect_cell of (int * int)
     | Suggested_move of move
-    | Alread_solved
+    | Already_solved
 
   let do_move (board : Sudoku_board.t) (move : move) :
       (Sudoku_board.t, error_states) result =
