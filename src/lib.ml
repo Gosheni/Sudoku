@@ -166,6 +166,24 @@ module Sudoku_board = struct
     failwith "Not implemented"
 
   (** *)
+
+  let seed_to_list (seed : int) : int list =
+    let rec aux (state : int list) (seed : int)
+        (number_of_element_to_find : int) =
+      if number_of_element_to_find = 0 then state
+      else
+        let new_num = abs (seed mod number_of_element_to_find) + 1 in
+        let adjusted_new_num =
+          List.fold (List.sort state ~compare:Int.compare) ~init:new_num
+            ~f:(fun acc element -> if acc = element then acc + 1 else acc)
+        in
+        aux
+          (adjusted_new_num :: state)
+          (seed / number_of_element_to_find)
+          (number_of_element_to_find - 1)
+    in
+    aux [] seed 9 |> List.rev
+
   let solve (_ : t) : t option = None
 
   type json = Yojson.Safe.t

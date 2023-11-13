@@ -118,8 +118,8 @@ let example_board_ints_3_solved =
 
 let example_board_3_solved = create_board example_board_ints_3_solved
 
-let example_board_ints_4 = 
-  [ 
+let example_board_ints_4 =
+  [
     [ 3; 0; 6; 5; 0; 8; 4; 0; 0 ];
     [ 5; 2; 0; 0; 0; 0; 0; 0; 0 ];
     [ 0; 8; 7; 0; 0; 0; 0; 3; 1 ];
@@ -138,7 +138,7 @@ let test_is_solved _ =
   assert_equal false @@ Sudoku_board.is_solved Sudoku_board.empty;
   assert_equal true @@ Sudoku_board.is_solved example_board_2;
   assert_equal false @@ Sudoku_board.is_solved example_invalid;
-  assert_equal false @@ Sudoku_board.is_solved example_board_4 
+  assert_equal false @@ Sudoku_board.is_solved example_board_4
 
 let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_1;
@@ -148,12 +148,26 @@ let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_3_solved;
   assert_equal true @@ Sudoku_board.is_valid example_board_4
 
+let test_seed : test =
+  test_list
+    [
+      ( "test seed with quickcheck" >:: fun _ ->
+        Quickcheck.test ~sexp_of:[%sexp_of: int] Int.quickcheck_generator
+          ~f:(fun i ->
+            i |> Sudoku_board.seed_to_list
+            |> List.sort ~compare:Int.compare
+            |> assert_equal (List.range 1 10)) );
+      ( "test that a seed of 0 is [1 2 3 4 5 6 7 8 9]" >:: fun _ ->
+        assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
+    ]
+
 let series =
   "Tests"
   >::: [
          "test pretty print" >:: test_pretty_printer;
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
+         test_seed;
        ]
 
 let () = run_test_tt_main series
