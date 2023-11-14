@@ -31,10 +31,11 @@ module Sudoku_board : sig
 
   type json = Yojson.Safe.t
 
-  val de_serialize : t -> json option
-  (** given a board, convert it into a json object to save *)
-  val serialize : json -> t
+  val serialize : t -> json option
   (** given a json, load the board from it and return the board *)
+  val de_serialize : json -> t option
+  (** given a board, convert it into a json object to save *)
+  val equal_test : t -> t -> bool
   val pretty_print : t -> string
   (** prints out the board in a human readable format, for CLI *)
 end
