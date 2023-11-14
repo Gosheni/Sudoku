@@ -7,7 +7,6 @@ module Sudoku_board : sig
 
   type row
   type t
-  type difficulty = int
 
   val equal : t -> t -> bool
 
@@ -27,13 +26,19 @@ module Sudoku_board : sig
   val generate_random : unit -> t
   (** generate a random fully solved sudoku board *)
 
-  val generate_degenerate : t -> difficulty -> t
+  val generate_degenerate : t -> int -> t
   (** Takes a fully solved sudoko and removes elements randomly while making sure the resulting board is still solvable. 
      Also takes an int that determines how many elements will be removed. This method expects a fully solved sudoku *)
 
   val seed_to_list : int -> int list
   (** Returns a list containing the numbers 1 through 9 exactly once. The order of the elements depend on the seed 
       This is a helper function for backtracking that is exposed to allow testing *)
+
+  val solve_with_backtracking : t -> int -> (t -> bool) -> t option
+  (** Solves a sudoku with backtracking requiring the solution to be unique *)
+
+  val solve_with_unique_solution : t -> t option
+  (** Solves a sudoku with backtracking requiring the solution to be unique *)
 
   val solve : t -> t option
   (** Solves a sudoku while requiring the solution to be unique *)

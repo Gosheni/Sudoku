@@ -9,108 +9,112 @@ module Sudoku_board = struct
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
 
+  let element_is_valid (element : element) : bool =
+    match element with
+    | Volatile a | Fixed a -> 1 <= a && a <= 9
+    | Empty -> true
+
   let equal (b1 : t) (b2 : t) : bool =
     let equal_row = Map.equal equal_element in
     Map.equal equal_row b1 b2
-
-  type difficulty = int
 
   let get (board : t) (x : int) (y : int) : element option =
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
 
-  let check_keys (board : t) : bool =
-    if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then
-      (* check row keys are 0-8 *)
-      false (* if not, return false (invalid board) *)
-    else
-      let check_rows (row : row) =
-        Map.keys row |> List.equal equal_int (List.range 0 9)
+  let is_valid (board : t) : bool =
+    let is_valid_lst (lst : element list) : bool =
+      let seen =
+        List.filter_map lst ~f:(function
+          | Empty -> None
+          | Fixed a | Volatile a -> Some a)
       in
-      (* check col keys are 0-8*)
-      let rec loop_rows (row_idx : int) acc =
-        if row_idx >= 9 then acc
+      let no_dups = List.contains_dup seen ~compare:compare_int |> not in
+      let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
+      no_dups && no_invalid
+    in
+
+    let check_keys (board : t) : bool =
+      if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then
+        (* check row keys are 0-8 *)
+        false (* if not, return false (invalid board) *)
+      else
+        let check_rows (row : row) =
+          Map.keys row |> List.equal equal_int (List.range 0 9)
+        in
+        (* check col keys are 0-8*)
+        let rec loop_rows (row_idx : int) acc =
+          if row_idx >= 9 then acc
+          else
+            Map.find_exn board
+              row_idx (* we already checked keys so find_exn should be fine *)
+            |> check_rows
+            |> fun valid_row -> loop_rows (row_idx + 1) (acc && valid_row)
+        in
+        loop_rows 0 true
+    in
+    let check_rows (board : t) (func_to_check : element list -> bool) : bool =
+      let check_row (row : row) = row |> Map.data |> func_to_check in
+      let rec loop_rows (x : int) (acc : bool) =
+        if x >= 9 then acc
         else
+          (* iterate rows 1 through *)
           Map.find_exn board
-            row_idx (* we already checked keys so find_exn should be fine *)
-          |> check_rows
-          |> fun valid_row -> loop_rows (row_idx + 1) (acc && valid_row)
+            x (* we already checked keys so find_exn should be fine *)
+          |> check_row |> ( && ) acc
+          |> loop_rows (x + 1)
       in
       loop_rows 0 true
-
-  let check_rows (board : t) (func_to_check : element list -> bool) : bool =
-    let check_row (row : row) = row |> Map.data |> func_to_check in
-    let rec loop_rows (x : int) (acc : bool) =
-      if x >= 9 then acc
-      else
-        (* iterate rows 1 through *)
-        Map.find_exn board
-          x (* we already checked keys so find_exn should be fine *)
-        |> check_row |> ( && ) acc
-        |> loop_rows (x + 1)
     in
-    loop_rows 0 true
-
-  let check_block (board : t) (func_to_check : element list -> bool) : bool =
-    let check_block (block_num : int) =
-      let row_lower = block_num / 3 * 3 in
-      let row_upper = row_lower + 3 in
-      let col_lower = block_num mod 3 * 3 in
-      let col_upper = col_lower + 3 in
-      let rec loop_block x y acc =
-        if y >= col_upper then acc
-        else if x >= row_upper then loop_block row_lower (y + 1) acc
-        else
-          match get board x y with
-          | None -> loop_block (x + 1) y acc
-          | Some elem -> loop_block (x + 1) y (elem :: acc)
+    let check_block (board : t) (func_to_check : element list -> bool) : bool =
+      let check_block (block_num : int) =
+        let row_lower = block_num / 3 * 3 in
+        let row_upper = row_lower + 3 in
+        let col_lower = block_num mod 3 * 3 in
+        let col_upper = col_lower + 3 in
+        let rec loop_block x y acc =
+          if y >= col_upper then acc
+          else if x >= row_upper then loop_block row_lower (y + 1) acc
+          else
+            match get board x y with
+            | None -> loop_block (x + 1) y acc
+            | Some elem -> loop_block (x + 1) y (elem :: acc)
+        in
+        let curr_block = loop_block row_lower col_lower [] in
+        func_to_check curr_block
       in
-      let curr_block = loop_block row_lower col_lower [] in
-      func_to_check curr_block
-    in
-    let rec loop_blocks (block_num : int) (acc : bool) =
-      if block_num >= 9 then acc
-      else
-        check_block block_num |> fun valid_block ->
-        loop_blocks (block_num + 1) (acc && valid_block)
-    in
-    loop_blocks 0 true
-
-  let check_cols (board : t) (func_to_check : element list -> bool) : bool =
-    let check_col (col_num : int) =
-      let rec loop_rows (row_idx : int) acc =
-        if row_idx >= 9 then acc
+      let rec loop_blocks (block_num : int) (acc : bool) =
+        if block_num >= 9 then acc
         else
-          match get board row_idx col_num with
-          | None ->
-              failwith
-                "tried to access invalid element or board incorrectly \
-                 structured"
-          | Some elem -> loop_rows (row_idx + 1) (elem :: acc)
+          check_block block_num |> fun valid_block ->
+          loop_blocks (block_num + 1) (acc && valid_block)
       in
-      let curr_col = loop_rows 0 [] in
-      func_to_check curr_col
+      loop_blocks 0 true
     in
-    let rec loop_cols (col_num : int) (acc : bool) =
-      if col_num >= 9 then acc
-      else
-        check_col col_num |> fun valid_col ->
-        loop_cols (col_num + 1) (acc && valid_col)
+
+    let check_cols (board : t) (func_to_check : element list -> bool) : bool =
+      let check_col (col_num : int) =
+        let rec loop_rows (row_idx : int) acc =
+          if row_idx >= 9 then acc
+          else
+            match get board row_idx col_num with
+            | None ->
+                failwith
+                  "tried to access invalid element or board incorrectly \
+                   structured"
+            | Some elem -> loop_rows (row_idx + 1) (elem :: acc)
+        in
+        let curr_col = loop_rows 0 [] in
+        func_to_check curr_col
+      in
+      let rec loop_cols (col_num : int) (acc : bool) =
+        if col_num >= 9 then acc
+        else
+          check_col col_num |> fun valid_col ->
+          loop_cols (col_num + 1) (acc && valid_col)
+      in
+      loop_cols 0 true
     in
-    loop_cols 0 true
-
-  let fold_check_non_empty ((acc, seen) : bool * int list) (elem : element) =
-    match elem with
-    | Empty -> (false, seen)
-    | Fixed a | Volatile a -> (acc, a :: seen)
-
-  let is_valid_lst (lst : element list) : bool =
-    let _, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
-    let no_dups = List.contains_dup seen ~compare:compare_int |> not in
-    let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
-    no_dups && no_invalid
-
-  let is_valid (board : t) : bool =
     check_keys board
     && check_rows board is_valid_lst
     && check_cols board is_valid_lst
@@ -122,20 +126,24 @@ module Sudoku_board = struct
           Map.exists row ~f:(equal_element Empty) |> not)
     else false
 
-  let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
-    Map.update board x ~f:(fun row ->
-        match row with
-        | None -> assert false
-        | Some row -> Map.update row y ~f:(fun _ -> element))
-
-  (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
-  let set_forced (board : t) (x : int) (y : int) (element : element) : t =
+  let update (board : t) (x : int) (y : int)
+      (element : element option -> element) : t =
     assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
     Map.update board x ~f:(fun row ->
         match row with
         | None -> assert false
-        | Some row -> Map.update row y ~f:(fun _ -> element))
+        | Some row -> Map.update row y ~f:element)
+
+  let set (board : t) (x : int) (y : int) (element : element) : t =
+    assert (
+      0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element
+      && is_valid board);
+    update board x y (fun _ -> element)
+
+  (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
+  let set_forced (board : t) (x : int) (y : int) (element : element) : t =
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element);
+    update board x y (fun _ -> element)
 
   let empty : t =
     let a = Map.empty (module Int) in
@@ -147,14 +155,6 @@ module Sudoku_board = struct
     List.init 9 ~f:(fun _ -> empty_row)
     |> List.foldi ~init:a ~f:(fun index map element ->
            Map.add_exn map ~key:index ~data:element)
-
-  (** Takes a fully solved sudoko. This method expects a fully solved sudoku *)
-  let generate_random _ = failwith "Not implemented"
-
-  let generate_degenerate (board : t) (difficulty : difficulty) : t =
-    failwith "Not implemented"
-
-  (** *)
 
   let seed_to_list (seed : int) : int list =
     let rec aux (state : int list) (seed : int)
@@ -173,10 +173,105 @@ module Sudoku_board = struct
     in
     aux [] seed 9 |> List.rev
 
+  let solve_with_backtracking (board : t) (seed : int) (validator : t -> bool) :
+      t option =
+    (* Optimizations Only check the validity of the block, row, and column that has been changed. *)
+    let all_empty : (int * int) list =
+      Map.to_alist board
+      |> List.map ~f:(Tuple2.map_snd ~f:Map.to_alist)
+      |> List.map ~f:(fun (row_num, row) ->
+             List.filter_map row ~f:(fun (col_num, element) ->
+                 if equal_element Empty element then Some (row_num, col_num)
+                 else None))
+      |> List.join
+    in
+
+    let order = seed_to_list seed in
+
+    let first_guess = List.hd_exn order in
+
+    let order_array : int option array =
+      List.range 1 10
+      |> List.map ~f:(fun a ->
+             let open Option.Let_syntax in
+             List.findi order ~f:(fun _ element -> element = a)
+             >>| Tuple2.get1 >>| ( + ) 1 >>= List.nth order)
+      |> List.to_array
+    in
+    let next (a : int) : element =
+      match order_array.(a - 1) with None -> Empty | Some a -> Volatile a
+    in
+
+    let rec backtrack (board : t) (empty : (int * int) list)
+        (added_to : (int * int) list) :
+        (t * (int * int) list * (int * int) list) option =
+      match added_to with
+      | [] ->
+          None (* Unable to backtrack anymore, i.e. the sudoku is unsolvable *)
+      | (x, y) :: tl -> (
+          let current = get board x y in
+          match current with
+          | Some (Volatile a) ->
+              let n = next a in
+              let next_board = set_forced board x y n in
+              if equal_element Empty n then
+                backtrack next_board ((x, y) :: empty) tl
+              else if validator next_board then
+                Some (next_board, empty, added_to)
+              else backtrack next_board empty added_to
+          | _ -> assert false)
+    in
+
+    let rec aux (board : t) (empty : (int * int) list)
+        (added_to : (int * int) list) : t option =
+      match empty with
+      | [] -> Some board
+      | (x, y) :: tl -> (
+          let new_board = set board x y @@ Volatile first_guess in
+          if validator new_board then aux new_board tl ((x, y) :: added_to)
+          else
+            match backtrack new_board tl ((x, y) :: added_to) with
+            | None -> None
+            | Some (backtracked_board, new_empty, new_added_to) ->
+                aux backtracked_board new_empty new_added_to)
+    in
+
+    aux board all_empty []
+
+  let solve_with_unique_solution (board : t) : t option =
+    match solve_with_backtracking board 0 is_valid with
+    | None -> None
+    | Some solution -> (
+        let other_solution =
+          solve_with_backtracking board 0 (fun board ->
+              is_valid board && equal solution board |> not)
+        in
+        match other_solution with None -> Some solution | _ -> None)
+
   let solve (_ : t) : t option = None
 
+  let generate_random _ : t =
+    let seed = Random.int Int.max_value in
+    match solve_with_backtracking empty seed is_valid with
+    | None -> assert false (* Solving an empty sudoku always succeeds *)
+    | Some board -> board
+
+  let generate_degenerate (board : t) (difficulty : int) : t =
+    assert (is_solved board && difficulty > 0);
+
+    let rec aux (board : t) (to_remove : int) : t =
+      if to_remove = 0 then board
+      else
+        let row = Random.int 9 in
+        let col = Random.int 9 in
+        let new_board = set board row col Empty in
+        if Option.is_some @@ solve_with_unique_solution new_board then
+          aux new_board (to_remove - 1)
+        else board
+    in
+    aux board difficulty
+
   type json = Yojson.Safe.t
-  (** Generates a solved sudoko with all the cells filled *)
 
   let serialize (map : t) : json option =
     let convert_map_content_to_json value_map data =
