@@ -273,7 +273,7 @@ module Sudoku_board = struct
 
   type json = Yojson.Safe.t
 
-  let serialize (map : t) : json option =
+  let serialize (board : t) : json option =
     let convert_map_content_to_json value_map data =
       let open Option.Let_syntax in
       (if Map.is_empty data then None else Some data)
@@ -282,7 +282,7 @@ module Sudoku_board = struct
       >>| fun a -> `Assoc a
     in
 
-    map
+    board
     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
     |> Map.filter_map ~f:Fn.id
     |> convert_map_content_to_json Fn.id
@@ -301,13 +301,13 @@ module Sudoku_board = struct
           | _ -> None)
     in
     try
-      let new_map =
+      let board =
         convert_to_map_if_possible obj ~f:(fun (key, value) ->
             match (int_of_string_opt key, yojson_to_row value) with
             | Some key_int, row -> Some (key_int, row)
             | _ -> None)
       in
-      Option.some_if (is_valid new_map) new_map
+      Option.some_if (is_valid board) board
     with exn -> None
 
   let pretty_print (board : t) : string =
