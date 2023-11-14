@@ -3,10 +3,7 @@
 open Core
 
 module Sudoku_board = struct
-  type element =
-    | Empty
-    | Fixed of int
-    | Volatile of int  (** Contains the board state including which *)
+  type element = Empty | Fixed of int | Volatile of int
   [@@deriving yojson, equal]
 
   type row = (int, element, Int.comparator_witness) Map.t
@@ -53,8 +50,8 @@ module Sudoku_board = struct
         (* iterate rows 1 through *)
         Map.find_exn board
           x (* we already checked keys so find_exn should be fine *)
-        |> check_row
-        |> fun valid_row -> loop_rows (x + 1) (acc && valid_row)
+        |> check_row |> ( && ) acc
+        |> loop_rows (x + 1)
     in
     loop_rows 0 true
 
