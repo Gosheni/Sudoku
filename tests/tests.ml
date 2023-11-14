@@ -147,8 +147,7 @@ let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_3;
   assert_equal true @@ Sudoku_board.is_valid example_board_3_solved;
   assert_equal true @@ Sudoku_board.is_valid example_board_4
-
-<<<<<<< HEAD
+  
 let test_de_serialize_valid_json _ =
   (* ... (previous code) ... *)
   let json =
@@ -170,7 +169,7 @@ let test_de_serialize_valid_json _ =
     assert_equal (Sudoku_board.equal_test example_board_1 result) true
   | None ->
     failwith "de_serialize threw an error"
-=======
+
 let test_seed : test =
   test_list
     [
@@ -183,7 +182,6 @@ let test_seed : test =
       ( "test that a seed of 0 is [1 2 3 4 5 6 7 8 9]" >:: fun _ ->
         assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
     ]
->>>>>>> 1a606c29f9f6517e32426a7b4f26702c9a3df442
 
 let series =
   "Tests"
@@ -191,11 +189,8 @@ let series =
          "test pretty print" >:: test_pretty_printer;
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
-<<<<<<< HEAD
          "test de_serialize_valid" >:: test_de_serialize_valid_json;
-=======
          test_seed;
->>>>>>> 1a606c29f9f6517e32426a7b4f26702c9a3df442
        ]
 
 let () = run_test_tt_main series
