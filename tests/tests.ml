@@ -118,8 +118,8 @@ let example_board_ints_3_solved =
 
 let example_board_3_solved = create_board example_board_ints_3_solved
 
-let example_board_ints_4 = 
-  [ 
+let example_board_ints_4 =
+  [
     [ 3; 0; 6; 5; 0; 8; 4; 0; 0 ];
     [ 5; 2; 0; 0; 0; 0; 0; 0; 0 ];
     [ 0; 8; 7; 0; 0; 0; 0; 3; 1 ];
@@ -138,7 +138,7 @@ let test_is_solved _ =
   assert_equal false @@ Sudoku_board.is_solved Sudoku_board.empty;
   assert_equal true @@ Sudoku_board.is_solved example_board_2;
   assert_equal false @@ Sudoku_board.is_solved example_invalid;
-  assert_equal false @@ Sudoku_board.is_solved example_board_4 
+  assert_equal false @@ Sudoku_board.is_solved example_board_4
 
 let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_1;
@@ -147,6 +147,41 @@ let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_3;
   assert_equal true @@ Sudoku_board.is_valid example_board_3_solved;
   assert_equal true @@ Sudoku_board.is_valid example_board_4
+  
+let test_de_serialize_valid_json _ =
+  (* ... (previous code) ... *)
+  let json =
+    `Assoc
+      [
+        ("1", `Assoc [("1", `Int 1); ("2", `Int 2); ("3", `Int 3); ("4", `Int 6); ("5", `Int 7); ("6", `Int 8); ("7", `Int 9); ("8", `Int 4); ("9", `Int 5)]);
+        ("2", `Assoc [("1", `Int 5); ("2", `Int 8); ("3", `Int 4); ("4", `Int 2); ("5", `Int 3); ("6", `Int 9); ("7", `Int 7); ("8", `Int 6); ("9", `Int 1)]);
+        ("3", `Assoc [("1", `Int 9); ("2", `Int 6); ("3", `Int 7); ("4", `Int 1); ("5", `Int 4); ("6", `Int 5); ("7", `Int 3); ("8", `Int 2); ("9", `Int 8)]);
+        ("4", `Assoc [("1", `Int 3); ("2", `Int 7); ("3", `Int 2); ("4", `Int 4); ("5", `Int 6); ("6", `Int 1); ("7", `Int 5); ("8", `Int 8); ("9", `Int 9)]);
+        ("5", `Assoc [("1", `Int 6); ("2", `Int 9); ("3", `Int 1); ("4", `Int 5); ("5", `Int 8); ("6", `Int 3); ("7", `Int 2); ("8", `Int 7); ("9", `Int 4)]);
+        ("6", `Assoc [("1", `Int 4); ("2", `Int 5); ("3", `Int 8); ("4", `Int 7); ("5", `Int 9); ("6", `Int 2); ("7", `Int 6); ("8", `Int 1); ("9", `Int 3)]);
+        ("7", `Assoc [("1", `Int 8); ("2", `Int 3); ("3", `Int 6); ("4", `Int 9); ("5", `Int 2); ("6", `Int 4); ("7", `Int 1); ("8", `Int 5); ("9", `Int 7)]);
+        ("8", `Assoc [("1", `Int 2); ("2", `Int 1); ("3", `Int 9); ("4", `Int 8); ("5", `Int 5); ("6", `Int 7); ("7", `Int 4); ("8", `Int 3); ("9", `Int 6)]);
+        ("9", `Assoc [("1", `Int 7); ("2", `Int 4); ("3", `Int 5); ("4", `Int 3); ("5", `Int 1); ("6", `Int 6); ("7", `Int 8); ("8", `Int 9); ("9", `Int 2)]);
+      ]
+  in  
+  match Sudoku_board.de_serialize json with 
+  | Some result ->
+    assert_equal (Sudoku_board.equal_test example_board_1 result) true
+  | None ->
+    failwith "de_serialize threw an error"
+
+let test_seed : test =
+  test_list
+    [
+      ( "test seed with quickcheck" >:: fun _ ->
+        Quickcheck.test ~sexp_of:[%sexp_of: int] Int.quickcheck_generator
+          ~f:(fun i ->
+            i |> Sudoku_board.seed_to_list
+            |> List.sort ~compare:Int.compare
+            |> assert_equal (List.range 1 10)) );
+      ( "test that a seed of 0 is [1 2 3 4 5 6 7 8 9]" >:: fun _ ->
+        assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
+    ]
 
 let series =
   "Tests"
@@ -154,6 +189,8 @@ let series =
          "test pretty print" >:: test_pretty_printer;
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
+         "test de_serialize_valid" >:: test_de_serialize_valid_json;
+         test_seed;
        ]
 
 let () = run_test_tt_main series

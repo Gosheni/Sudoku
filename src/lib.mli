@@ -15,10 +15,13 @@ module Sudoku_board : sig
   val get : t -> int -> int -> element option
   val set : t -> int -> int -> element -> t
   val set_forced : t -> int -> int -> element -> t
+
   val is_valid : t -> bool
   (** checks that the board does not violate any sudoku rules, but could have empty values *)
+
   val is_solved : t -> bool
   (** checks that the board is solved i.e. does not violate any sudoku rules and all cells are non-empty *)
+
   val generate_random : unit -> t
   (** generate a random fully solved sudoku board *)
 
@@ -26,15 +29,21 @@ module Sudoku_board : sig
   (** Takes a fully solved sudoko and removes elements randomly while making sure the resulting board is still solvable. 
      Also takes an int that determines how many elements will be removed. This method expects a fully solved sudoku *)
 
+  val seed_to_list : int -> int list
+  (** Returns a list containing the numbers 1 through 9 exactly once. The order of the elements depend on the seed 
+      This is a helper function for backtracking that is exposed to allow testing *)
+
   val solve : t -> t option
   (** Solves a sudoku while requiring the solution to be unique *)
 
   type json = Yojson.Safe.t
 
-  val de_serialize : t -> json option
-  (** given a board, convert it into a json object to save *)
-  val serialize : json -> t
+  val serialize : t -> json option
   (** given a json, load the board from it and return the board *)
+  val de_serialize : json -> t option
+  (** given a board, convert it into a json object to save *)
+  val equal_test : t -> t -> bool
+
   val pretty_print : t -> string
   (** prints out the board in a human readable format, for CLI *)
 end

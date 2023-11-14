@@ -29,7 +29,7 @@ We implement the game Sudoko including:
 
 4. **Include a mock of a use of your application, along the lines of the Minesweeper example above but showing the complete protocol.**
 
-    ``` 
+    ``` sh
     $ ./sudoku.exe init  # initialize a new game
         1 2 3   4 5 6   7 8 9
       -------------------------
@@ -138,21 +138,14 @@ We implement the game Sudoko including:
 
     ```
 
-board
-move
-invalid move
-hint
-solve
-
-
 5. **Also include a brief list of what order you will implement features.**
     1. Initially we will work on our Sududo library that is the interface for updating and generating sudoku boards.
     2. Then we'll add tests to ensure everything works as expected. 
     3. Then we will work on out command-line utility
-    4. See **1.** above for additional 
+    4. If we have the time, we will implement the additional features as stated in **1.** above.
 
 6. **If your project is an OCaml version of some other app in another language or a projust you did in another course etc please cite this other project. In general any code that inspired your code needs to be cited in your submissions.**  
     _None_.
 
 7. **You may also include any other information which will make it easier to understand your project.**  
-    See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku).
+    See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game. And [Wikipedia](https://en.wikipedia.org/wiki/Sudoku_solving_algorithms) for algorithms to solve a sudoku board.

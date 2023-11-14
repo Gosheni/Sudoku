@@ -7,7 +7,7 @@ module Sudoku_board = struct
     | Empty
     | Fixed of int
     | Volatile of int  (** Contains the board state including which *)
-  [@@deriving yojson]
+  [@@deriving yojson, equal]
 
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
@@ -166,12 +166,30 @@ module Sudoku_board = struct
     failwith "Not implemented"
 
   (** *)
+
+  let seed_to_list (seed : int) : int list =
+    let rec aux (state : int list) (seed : int)
+        (number_of_element_to_find : int) =
+      if number_of_element_to_find = 0 then state
+      else
+        let new_num = abs (seed mod number_of_element_to_find) + 1 in
+        let adjusted_new_num =
+          List.fold (List.sort state ~compare:Int.compare) ~init:new_num
+            ~f:(fun acc element -> if acc = element then acc + 1 else acc)
+        in
+        aux
+          (adjusted_new_num :: state)
+          (seed / number_of_element_to_find)
+          (number_of_element_to_find - 1)
+    in
+    aux [] seed 9 |> List.rev
+
   let solve (_ : t) : t option = None
 
   type json = Yojson.Safe.t
   (** Generates a solved sudoko with all the cells filled *)
 
-  let de_serialize (map : t) : json option =
+  let serialize (map : t) : json option =
     let convert_map_content_to_json value_map data =
       let open Option.Let_syntax in
       (if Map.is_empty data then None else Some data)
@@ -180,30 +198,51 @@ module Sudoku_board = struct
       >>| fun a -> `Assoc a
     in
 
-    (* TODO: Should we filter errors? *)
     map
     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
     |> Map.filter_map ~f:Fn.id
     |> convert_map_content_to_json Fn.id
 
-  let serialize (obj : json) : t =
+  let de_serialize (obj : json) : t option =
     (* TODO: Add error handling *)
     let convert_to_map_if_possible obj ~f:filter_map =
       match obj with
       | `Assoc assoc ->
-          List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
+        List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
       | _ -> Map.empty (module Int)
     in
-    let yojson_to_row =
-      convert_to_map_if_possible ~f:(fun (key, value) ->
-          match (int_of_string_opt key, element_of_yojson value) with
-          | Some key_int, Ok element -> Some (key_int, element)
-          | _ -> None)
+    let yojson_to_row obj =
+      convert_to_map_if_possible obj ~f:(fun (key, value) ->
+        match (int_of_string_opt key, element_of_yojson value) with
+        | Some key_int, Ok element -> Some (key_int, element)
+        | _ -> None)
     in
-    convert_to_map_if_possible obj ~f:(fun (key, value) ->
+    try
+      let new_map = convert_to_map_if_possible obj ~f:(fun (key, value) ->
         match (int_of_string_opt key, yojson_to_row value) with
         | Some key_int, row -> Some (key_int, row)
-        | _ -> None)
+        | _ -> None) in
+      Some new_map
+    with
+      | exn -> None 
+
+let equal_test (board1 : t) (board2 : t) =
+  let equal_row (row1 : row) (row2 : row) =
+    let alist1 = Map.to_alist row1 in
+    let alist2 = Map.to_alist row2 in
+    List.for_all2_exn alist1 alist2 ~f:(fun (col1, elem1) (col2, elem2) ->
+      col1 = col2 && equal_element elem1 elem2
+    )
+  in
+      
+  let alist1 = Map.to_alist board1 in
+  let alist2 = Map.to_alist board2 in
+  List.length alist1 = List.length alist2 &&
+  List.for_all2_exn alist1 alist2 ~f:(fun (_, row_elem1) (_, row_elem2) ->
+    equal_row row_elem1 row_elem2
+  )
+      
+      
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in
