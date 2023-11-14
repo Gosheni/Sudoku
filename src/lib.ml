@@ -3,16 +3,48 @@
 open Core
 
 module Sudoku_board = struct
-  type element = Empty | Fixed of int | Volatile of int
+  type element_num =
+    | One
+    | Two
+    | Three
+    | Four
+    | Five
+    | Six
+    | Seven
+    | Eight
+    | Nine
+  [@@deriving yojson, equal, compare]
+
+  let element_num_from_int_exn (a : int) : element_num =
+    match a with
+    | 1 -> One
+    | 2 -> Two
+    | 3 -> Three
+    | 4 -> Four
+    | 5 -> Five
+    | 6 -> Six
+    | 7 -> Seven
+    | 8 -> Eight
+    | 9 -> Nine
+    | _ -> failwith "Not a valid sudoku element"
+
+  let element_num_to_int (element : element_num) : int =
+    match element with
+    | One -> 1
+    | Two -> 2
+    | Three -> 3
+    | Four -> 4
+    | Five -> 5
+    | Six -> 6
+    | Seven -> 7
+    | Eight -> 8
+    | Nine -> 9
+
+  type element = Empty | Fixed of element_num | Volatile of element_num
   [@@deriving yojson, equal]
 
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
-
-  let element_is_valid (element : element) : bool =
-    match element with
-    | Volatile a | Fixed a -> 1 <= a && a <= 9
-    | Empty -> true
 
   let equal (b1 : t) (b2 : t) : bool =
     let equal_row = Map.equal equal_element in
@@ -24,14 +56,11 @@ module Sudoku_board = struct
 
   let is_valid (board : t) : bool =
     let is_valid_lst (lst : element list) : bool =
-      let seen =
-        List.filter_map lst ~f:(function
-          | Empty -> None
-          | Fixed a | Volatile a -> Some a)
-      in
-      let no_dups = List.contains_dup seen ~compare:compare_int |> not in
-      let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
-      no_dups && no_invalid
+      List.filter_map lst ~f:(function
+        | Empty -> None
+        | Fixed a | Volatile a -> Some a)
+      |> List.contains_dup ~compare:compare_element_num
+      |> not
     in
 
     let check_keys (board : t) : bool =
@@ -135,14 +164,12 @@ module Sudoku_board = struct
         | Some row -> Map.update row y ~f:element)
 
   let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (
-      0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element
-      && is_valid board);
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
     update board x y (fun _ -> element)
 
   (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
   let set_forced (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element);
+    assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
     update board x y (fun _ -> element)
 
   let empty : t =
@@ -188,7 +215,7 @@ module Sudoku_board = struct
 
     let order = seed_to_list seed in
 
-    let first_guess = List.hd_exn order in
+    let first_guess = List.hd_exn order |> element_num_from_int_exn in
 
     let order_array : int option array =
       List.range 1 10
@@ -198,8 +225,11 @@ module Sudoku_board = struct
              >>| Tuple2.get1 >>| ( + ) 1 >>= List.nth order)
       |> List.to_array
     in
-    let next (a : int) : element =
-      match order_array.(a - 1) with None -> Empty | Some a -> Volatile a
+    let next (a : element_num) : element =
+      let num = element_num_to_int a in
+      match order_array.(num - 1) with
+      | None -> Empty
+      | Some a -> Volatile (element_num_from_int_exn a)
     in
 
     let rec backtrack (board : t) (empty : (int * int) list)
@@ -265,9 +295,8 @@ module Sudoku_board = struct
         let row = Random.int 9 in
         let col = Random.int 9 in
         let new_board = set board row col Empty in
-        if Option.is_some @@ solve_with_unique_solution new_board then
-          aux new_board (to_remove - 1)
-        else board
+        if Option.is_none @@ solve_with_unique_solution new_board then board
+        else aux new_board (to_remove - 1)
     in
     aux board difficulty
 
@@ -314,7 +343,7 @@ module Sudoku_board = struct
     let left_spacing : string = "  " in
     let element_to_string = function
       | Empty -> " "
-      | Fixed a | Volatile a -> Int.to_string a
+      | Fixed a | Volatile a -> a |> element_num_to_int |> Int.to_string
     in
     let pretty_print_row (row : row) : string =
       Map.fold row ~init:"" ~f:(fun ~key:col_num ~data:value accum ->
@@ -341,7 +370,7 @@ module Sudoku_game = struct
   (** Fixed cell is used when the user attempts to change a cell that is fixed. Already present is used when the user's move would make a row/column/3x3 square have a duplicate entry *)
   type error_states = Fixed_cell | Already_present | Invalid_position
 
-  type move = { x : int; y : int; value : int option }
+  type move = { x : int; y : int; value : Sudoku_board.element_num option }
 
   type hint =
     | Incorrect_cell of (int * int)
@@ -357,7 +386,8 @@ module Sudoku_game = struct
         (* Either the board is not the expected 9 x 9 grid or an invalid position was used *)
     | Some (Fixed _), _ -> Error Fixed_cell
     | Some Empty, None -> Error Already_present
-    | Some (Volatile element), Some move_value when element = move_value ->
+    | Some (Volatile element), Some move_value
+      when Sudoku_board.equal_element_num element move_value ->
         Error Already_present
     | Some (Volatile _), None ->
         Ok (set board move.x move.y @@ Empty)

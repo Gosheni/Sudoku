@@ -1,12 +1,26 @@
 module Sudoku_board : sig
+  type element_num =
+    | One
+    | Two
+    | Three
+    | Four
+    | Five
+    | Six
+    | Seven
+    | Eight
+    | Nine
+  [@@deriving yojson, equal, compare]
+
   type element =
     | Empty
-    | Fixed of int
-    | Volatile of int  (** Contains the board state including which *)
+    | Fixed of element_num
+    | Volatile of element_num  (** Contains the board state including which *)
   [@@deriving yojson]
 
   type row
   type t
+
+  val element_num_from_int_exn : int -> element_num
 
   val equal : t -> t -> bool
 
@@ -59,7 +73,7 @@ module Sudoku_game : sig
   (** Fixed cell is used when the user attempts to change a cell that is fixed. Already present is used when the user's move would make a row/column/3x3 square have a duplicate entry *)
   type error_states = Fixed_cell | Already_present | Invalid_position
 
-  type move = { x : int; y : int; value : int option }
+  type move = { x : int; y : int; value : Sudoku_board.element_num option }
 
   type hint =
     | Incorrect_cell of (int * int)
