@@ -124,8 +124,7 @@ module Sudoku_board = struct
 
   let is_valid_lst (lst : element list) : bool =
     let _, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
-    let unique_seen = List.dedup_and_sort seen ~compare:compare_int in
-    let no_dups = List.length seen = List.length unique_seen in
+    let no_dups = List.contains_dup seen ~compare:compare_int |> not in
     let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
     no_dups && no_invalid
 
