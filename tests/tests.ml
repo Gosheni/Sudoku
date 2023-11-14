@@ -147,26 +147,134 @@ let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_3;
   assert_equal true @@ Sudoku_board.is_valid example_board_3_solved;
   assert_equal true @@ Sudoku_board.is_valid example_board_4
-  
-let test_de_serialize_valid_json _ =
+
+let test_deserialize_valid_json _ =
   (* ... (previous code) ... *)
   let json =
     `Assoc
       [
-        ("0", `Assoc [("0", `List [`String "Fixed"; `Int 1]); ("1", `List [`String "Fixed"; `Int 2]); ("2", `List [`String "Fixed"; `Int 3]); ("3", `List [`String "Fixed"; `Int 6]); ("4", `List [`String "Fixed"; `Int 7]); ("5", `List [`String "Fixed"; `Int 8]); ("6", `List [`String "Fixed"; `Int 9]); ("7", `List [`String "Fixed"; `Int 4]); ("8", `List [`String "Fixed"; `Int 5])]);
-        ("1", `Assoc [("0", `List [`String "Fixed"; `Int 5]); ("1", `List [`String "Fixed"; `Int 8]); ("2", `List [`String "Fixed"; `Int 4]); ("3", `List [`String "Fixed"; `Int 2]); ("4", `List [`String "Fixed"; `Int 3]); ("5", `List [`String "Fixed"; `Int 9]); ("6", `List [`String "Fixed"; `Int 7]); ("7", `List [`String "Fixed"; `Int 6]); ("8", `List [`String "Fixed"; `Int 1])]);
-        ("2", `Assoc [("0", `List [`String "Fixed"; `Int 9]); ("1", `List [`String "Fixed"; `Int 6]); ("2", `List [`String "Fixed"; `Int 7]); ("3", `List [`String "Fixed"; `Int 1]); ("4", `List [`String "Fixed"; `Int 4]); ("5", `List [`String "Fixed"; `Int 5]); ("6", `List [`String "Fixed"; `Int 3]); ("7", `List [`String "Fixed"; `Int 2]); ("8", `List [`String "Fixed"; `Int 8])]);
-        ("3", `Assoc [("0", `List [`String "Fixed"; `Int 3]); ("1", `List [`String "Fixed"; `Int 7]); ("2", `List [`String "Fixed"; `Int 2]); ("3", `List [`String "Fixed"; `Int 4]); ("4", `List [`String "Fixed"; `Int 6]); ("5", `List [`String "Fixed"; `Int 1]); ("6", `List [`String "Fixed"; `Int 5]); ("7", `List [`String "Fixed"; `Int 8]); ("8", `List [`String "Fixed"; `Int 9])]);
-        ("4", `Assoc [("0", `List [`String "Fixed"; `Int 6]); ("1", `List [`String "Fixed"; `Int 9]); ("2", `List [`String "Fixed"; `Int 1]); ("3", `List [`String "Fixed"; `Int 5]); ("4", `List [`String "Fixed"; `Int 8]); ("5", `List [`String "Fixed"; `Int 3]); ("6", `List [`String "Fixed"; `Int 2]); ("7", `List [`String "Fixed"; `Int 7]); ("8", `List [`String "Fixed"; `Int 4])]);
-        ("5", `Assoc [("0", `List [`String "Fixed"; `Int 4]); ("1", `List [`String "Fixed"; `Int 5]); ("2", `List [`String "Fixed"; `Int 8]); ("3", `List [`String "Fixed"; `Int 7]); ("4", `List [`String "Fixed"; `Int 9]); ("5", `List [`String "Fixed"; `Int 2]); ("6", `List [`String "Fixed"; `Int 6]); ("7", `List [`String "Fixed"; `Int 1]); ("8", `List [`String "Fixed"; `Int 3])]);
-        ("6", `Assoc [("0", `List [`String "Fixed"; `Int 8]); ("1", `List [`String "Fixed"; `Int 3]); ("2", `List [`String "Fixed"; `Int 6]); ("3", `List [`String "Fixed"; `Int 9]); ("4", `List [`String "Fixed"; `Int 2]); ("5", `List [`String "Fixed"; `Int 4]); ("6", `List [`String "Fixed"; `Int 1]); ("7", `List [`String "Fixed"; `Int 5]); ("8", `List [`String "Fixed"; `Int 7])]);
-        ("7", `Assoc [("0", `List [`String "Fixed"; `Int 2]); ("1", `List [`String "Fixed"; `Int 1]); ("2", `List [`String "Fixed"; `Int 9]); ("3", `List [`String "Fixed"; `Int 8]); ("4", `List [`String "Fixed"; `Int 5]); ("5", `List [`String "Fixed"; `Int 7]); ("6", `List [`String "Fixed"; `Int 4]); ("7", `List [`String "Fixed"; `Int 3]); ("8", `List [`String "Fixed"; `Int 6])]);
-        ("8", `Assoc [("0", `List [`String "Fixed"; `Int 7]); ("1", `List [`String "Fixed"; `Int 4]); ("2", `List [`String "Fixed"; `Int 5]); ("3", `List [`String "Fixed"; `Int 3]); ("4", `List [`String "Fixed"; `Int 1]); ("5", `List [`String "Fixed"; `Int 6]); ("6", `List [`String "Fixed"; `Int 8]); ("7", `List [`String "Fixed"; `Int 9]); ("8", `List [`String "Fixed"; `Int 2])]);
+        ( "0",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 1 ]);
+              ("1", `List [ `String "Fixed"; `Int 2 ]);
+              ("2", `List [ `String "Fixed"; `Int 3 ]);
+              ("3", `List [ `String "Fixed"; `Int 6 ]);
+              ("4", `List [ `String "Fixed"; `Int 7 ]);
+              ("5", `List [ `String "Fixed"; `Int 8 ]);
+              ("6", `List [ `String "Fixed"; `Int 9 ]);
+              ("7", `List [ `String "Fixed"; `Int 4 ]);
+              ("8", `List [ `String "Fixed"; `Int 5 ]);
+            ] );
+        ( "1",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 5 ]);
+              ("1", `List [ `String "Fixed"; `Int 8 ]);
+              ("2", `List [ `String "Fixed"; `Int 4 ]);
+              ("3", `List [ `String "Fixed"; `Int 2 ]);
+              ("4", `List [ `String "Fixed"; `Int 3 ]);
+              ("5", `List [ `String "Fixed"; `Int 9 ]);
+              ("6", `List [ `String "Fixed"; `Int 7 ]);
+              ("7", `List [ `String "Fixed"; `Int 6 ]);
+              ("8", `List [ `String "Fixed"; `Int 1 ]);
+            ] );
+        ( "2",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 9 ]);
+              ("1", `List [ `String "Fixed"; `Int 6 ]);
+              ("2", `List [ `String "Fixed"; `Int 7 ]);
+              ("3", `List [ `String "Fixed"; `Int 1 ]);
+              ("4", `List [ `String "Fixed"; `Int 4 ]);
+              ("5", `List [ `String "Fixed"; `Int 5 ]);
+              ("6", `List [ `String "Fixed"; `Int 3 ]);
+              ("7", `List [ `String "Fixed"; `Int 2 ]);
+              ("8", `List [ `String "Fixed"; `Int 8 ]);
+            ] );
+        ( "3",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 3 ]);
+              ("1", `List [ `String "Fixed"; `Int 7 ]);
+              ("2", `List [ `String "Fixed"; `Int 2 ]);
+              ("3", `List [ `String "Fixed"; `Int 4 ]);
+              ("4", `List [ `String "Fixed"; `Int 6 ]);
+              ("5", `List [ `String "Fixed"; `Int 1 ]);
+              ("6", `List [ `String "Fixed"; `Int 5 ]);
+              ("7", `List [ `String "Fixed"; `Int 8 ]);
+              ("8", `List [ `String "Fixed"; `Int 9 ]);
+            ] );
+        ( "4",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 6 ]);
+              ("1", `List [ `String "Fixed"; `Int 9 ]);
+              ("2", `List [ `String "Fixed"; `Int 1 ]);
+              ("3", `List [ `String "Fixed"; `Int 5 ]);
+              ("4", `List [ `String "Fixed"; `Int 8 ]);
+              ("5", `List [ `String "Fixed"; `Int 3 ]);
+              ("6", `List [ `String "Fixed"; `Int 2 ]);
+              ("7", `List [ `String "Fixed"; `Int 7 ]);
+              ("8", `List [ `String "Fixed"; `Int 4 ]);
+            ] );
+        ( "5",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 4 ]);
+              ("1", `List [ `String "Fixed"; `Int 5 ]);
+              ("2", `List [ `String "Fixed"; `Int 8 ]);
+              ("3", `List [ `String "Fixed"; `Int 7 ]);
+              ("4", `List [ `String "Fixed"; `Int 9 ]);
+              ("5", `List [ `String "Fixed"; `Int 2 ]);
+              ("6", `List [ `String "Fixed"; `Int 6 ]);
+              ("7", `List [ `String "Fixed"; `Int 1 ]);
+              ("8", `List [ `String "Fixed"; `Int 3 ]);
+            ] );
+        ( "6",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 8 ]);
+              ("1", `List [ `String "Fixed"; `Int 3 ]);
+              ("2", `List [ `String "Fixed"; `Int 6 ]);
+              ("3", `List [ `String "Fixed"; `Int 9 ]);
+              ("4", `List [ `String "Fixed"; `Int 2 ]);
+              ("5", `List [ `String "Fixed"; `Int 4 ]);
+              ("6", `List [ `String "Fixed"; `Int 1 ]);
+              ("7", `List [ `String "Fixed"; `Int 5 ]);
+              ("8", `List [ `String "Fixed"; `Int 7 ]);
+            ] );
+        ( "7",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 2 ]);
+              ("1", `List [ `String "Fixed"; `Int 1 ]);
+              ("2", `List [ `String "Fixed"; `Int 9 ]);
+              ("3", `List [ `String "Fixed"; `Int 8 ]);
+              ("4", `List [ `String "Fixed"; `Int 5 ]);
+              ("5", `List [ `String "Fixed"; `Int 7 ]);
+              ("6", `List [ `String "Fixed"; `Int 4 ]);
+              ("7", `List [ `String "Fixed"; `Int 3 ]);
+              ("8", `List [ `String "Fixed"; `Int 6 ]);
+            ] );
+        ( "8",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 7 ]);
+              ("1", `List [ `String "Fixed"; `Int 4 ]);
+              ("2", `List [ `String "Fixed"; `Int 5 ]);
+              ("3", `List [ `String "Fixed"; `Int 3 ]);
+              ("4", `List [ `String "Fixed"; `Int 1 ]);
+              ("5", `List [ `String "Fixed"; `Int 6 ]);
+              ("6", `List [ `String "Fixed"; `Int 8 ]);
+              ("7", `List [ `String "Fixed"; `Int 9 ]);
+              ("8", `List [ `String "Fixed"; `Int 2 ]);
+            ] );
       ]
-  in  
-  Sudoku_board.de_serialize json
+  in
+  Sudoku_board.deserialize json
   |> Option.map ~f:(Sudoku_board.equal example_board_1)
-  |> Option.value_or_thunk ~default: (fun _ -> false)
+  |> Option.value_or_thunk ~default:(fun _ -> false)
   |> assert_bool ""
 
 let test_seed : test =
@@ -188,7 +296,7 @@ let series =
          "test pretty print" >:: test_pretty_printer;
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
-         "test de_serialize_valid" >:: test_de_serialize_valid_json;
+         "test deserialize_valid" >:: test_deserialize_valid_json;
          test_seed;
        ]
 

@@ -192,7 +192,7 @@ module Sudoku_board = struct
     |> Map.filter_map ~f:Fn.id
     |> convert_map_content_to_json Fn.id
 
-  let de_serialize (obj : json) : t option =
+  let deserialize (obj : json) : t option =
     let convert_to_map_if_possible obj ~f:filter_map =
       match obj with
       | `Assoc assoc ->

@@ -42,7 +42,7 @@ module Sudoku_board : sig
 
   val serialize : t -> json option
   (** converts a board to json *)
-  val de_serialize : json -> t option
+  val deserialize : json -> t option
   (** loads a board from json *)
   
 
