@@ -15,10 +15,6 @@ module Sudoku_board = struct
 
   type difficulty = int
 
-  let element_to_string = function
-    | Empty -> " "
-    | Fixed a | Volatile a -> Int.to_string a
-
   let get (board : t) (x : int) (y : int) : element option =
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
@@ -221,6 +217,10 @@ module Sudoku_board = struct
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in
+    let element_to_string = function
+      | Empty -> " "
+      | Fixed a | Volatile a -> Int.to_string a
+    in
     let pretty_print_row (row : row) : string =
       Map.fold row ~init:"" ~f:(fun ~key:col_num ~data:value accum ->
           let block = element_to_string value ^ " " in
