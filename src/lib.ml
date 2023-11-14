@@ -108,20 +108,6 @@ module Sudoku_board = struct
     | Empty -> (false, seen)
     | Fixed a | Volatile a -> (acc, a :: seen)
 
-  let is_solved_list (lst : element list) : bool =
-    let filled, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
-    if filled then
-      seen
-      |> List.sort ~compare:compare_int
-      |> List.equal equal_int (List.range 1 10)
-    else false
-
-  let is_solved (board : t) : bool =
-    check_keys board
-    && check_rows board is_solved_list
-    && check_cols board is_solved_list
-    && check_block board is_solved_list
-
   let is_valid_lst (lst : element list) : bool =
     let _, seen = List.fold lst ~init:(true, []) ~f:fold_check_non_empty in
     let no_dups = List.contains_dup seen ~compare:compare_int |> not in
@@ -133,6 +119,12 @@ module Sudoku_board = struct
     && check_rows board is_valid_lst
     && check_cols board is_valid_lst
     && check_block board is_valid_lst
+
+  let is_solved (board : t) : bool =
+    if is_valid board then
+      Map.exists board ~f:(fun row ->
+          Map.exists row ~f:(equal_element Empty) |> not)
+    else false
 
   let set (board : t) (x : int) (y : int) (element : element) : t =
     assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && is_valid board);
