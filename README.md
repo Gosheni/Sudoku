@@ -147,4 +147,4 @@ We implement the game Sudoko including:
     _None_.
 
 7. **You may also include any other information which will make it easier to understand your project.**  
-    See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a dsecription of the game.
+    See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game. And [Wikipedia](https://en.wikipedia.org/wiki/Sudoku_solving_algorithms) for algorithms to solve a sudoku board.
