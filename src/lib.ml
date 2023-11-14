@@ -7,10 +7,15 @@ module Sudoku_board = struct
     | Empty
     | Fixed of int
     | Volatile of int  (** Contains the board state including which *)
-  [@@deriving yojson]
+  [@@deriving yojson, equal]
 
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
+
+  let equal (b1 : t) (b2 : t) : bool =
+    let equal_row = Map.equal equal_element in
+    Map.equal equal_row b1 b2
+
   type difficulty = int
 
   let element_to_string = function

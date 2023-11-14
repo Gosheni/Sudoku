@@ -9,6 +9,8 @@ module Sudoku_board : sig
   type t
   type difficulty = int
 
+  val equal : t -> t -> bool
+
   val empty : t
   (** First index is the row *)
 
@@ -65,5 +67,3 @@ module Sudoku_game : sig
   val generate_hint : Sudoku_board.t -> hint
   (** Generate a hint for the user given the current board state *)
 end
-
-(* Use monads *)
