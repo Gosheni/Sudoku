@@ -153,22 +153,21 @@ let test_de_serialize_valid_json _ =
   let json =
     `Assoc
       [
-        ("1", `Assoc [("1", `Int 1); ("2", `Int 2); ("3", `Int 3); ("4", `Int 6); ("5", `Int 7); ("6", `Int 8); ("7", `Int 9); ("8", `Int 4); ("9", `Int 5)]);
-        ("2", `Assoc [("1", `Int 5); ("2", `Int 8); ("3", `Int 4); ("4", `Int 2); ("5", `Int 3); ("6", `Int 9); ("7", `Int 7); ("8", `Int 6); ("9", `Int 1)]);
-        ("3", `Assoc [("1", `Int 9); ("2", `Int 6); ("3", `Int 7); ("4", `Int 1); ("5", `Int 4); ("6", `Int 5); ("7", `Int 3); ("8", `Int 2); ("9", `Int 8)]);
-        ("4", `Assoc [("1", `Int 3); ("2", `Int 7); ("3", `Int 2); ("4", `Int 4); ("5", `Int 6); ("6", `Int 1); ("7", `Int 5); ("8", `Int 8); ("9", `Int 9)]);
-        ("5", `Assoc [("1", `Int 6); ("2", `Int 9); ("3", `Int 1); ("4", `Int 5); ("5", `Int 8); ("6", `Int 3); ("7", `Int 2); ("8", `Int 7); ("9", `Int 4)]);
-        ("6", `Assoc [("1", `Int 4); ("2", `Int 5); ("3", `Int 8); ("4", `Int 7); ("5", `Int 9); ("6", `Int 2); ("7", `Int 6); ("8", `Int 1); ("9", `Int 3)]);
-        ("7", `Assoc [("1", `Int 8); ("2", `Int 3); ("3", `Int 6); ("4", `Int 9); ("5", `Int 2); ("6", `Int 4); ("7", `Int 1); ("8", `Int 5); ("9", `Int 7)]);
-        ("8", `Assoc [("1", `Int 2); ("2", `Int 1); ("3", `Int 9); ("4", `Int 8); ("5", `Int 5); ("6", `Int 7); ("7", `Int 4); ("8", `Int 3); ("9", `Int 6)]);
-        ("9", `Assoc [("1", `Int 7); ("2", `Int 4); ("3", `Int 5); ("4", `Int 3); ("5", `Int 1); ("6", `Int 6); ("7", `Int 8); ("8", `Int 9); ("9", `Int 2)]);
+        ("0", `Assoc [("0", `List [`String "Fixed"; `Int 1]); ("1", `List [`String "Fixed"; `Int 2]); ("2", `List [`String "Fixed"; `Int 3]); ("3", `List [`String "Fixed"; `Int 6]); ("4", `List [`String "Fixed"; `Int 7]); ("5", `List [`String "Fixed"; `Int 8]); ("6", `List [`String "Fixed"; `Int 9]); ("7", `List [`String "Fixed"; `Int 4]); ("8", `List [`String "Fixed"; `Int 5])]);
+        ("1", `Assoc [("0", `List [`String "Fixed"; `Int 5]); ("1", `List [`String "Fixed"; `Int 8]); ("2", `List [`String "Fixed"; `Int 4]); ("3", `List [`String "Fixed"; `Int 2]); ("4", `List [`String "Fixed"; `Int 3]); ("5", `List [`String "Fixed"; `Int 9]); ("6", `List [`String "Fixed"; `Int 7]); ("7", `List [`String "Fixed"; `Int 6]); ("8", `List [`String "Fixed"; `Int 1])]);
+        ("2", `Assoc [("0", `List [`String "Fixed"; `Int 9]); ("1", `List [`String "Fixed"; `Int 6]); ("2", `List [`String "Fixed"; `Int 7]); ("3", `List [`String "Fixed"; `Int 1]); ("4", `List [`String "Fixed"; `Int 4]); ("5", `List [`String "Fixed"; `Int 5]); ("6", `List [`String "Fixed"; `Int 3]); ("7", `List [`String "Fixed"; `Int 2]); ("8", `List [`String "Fixed"; `Int 8])]);
+        ("3", `Assoc [("0", `List [`String "Fixed"; `Int 3]); ("1", `List [`String "Fixed"; `Int 7]); ("2", `List [`String "Fixed"; `Int 2]); ("3", `List [`String "Fixed"; `Int 4]); ("4", `List [`String "Fixed"; `Int 6]); ("5", `List [`String "Fixed"; `Int 1]); ("6", `List [`String "Fixed"; `Int 5]); ("7", `List [`String "Fixed"; `Int 8]); ("8", `List [`String "Fixed"; `Int 9])]);
+        ("4", `Assoc [("0", `List [`String "Fixed"; `Int 6]); ("1", `List [`String "Fixed"; `Int 9]); ("2", `List [`String "Fixed"; `Int 1]); ("3", `List [`String "Fixed"; `Int 5]); ("4", `List [`String "Fixed"; `Int 8]); ("5", `List [`String "Fixed"; `Int 3]); ("6", `List [`String "Fixed"; `Int 2]); ("7", `List [`String "Fixed"; `Int 7]); ("8", `List [`String "Fixed"; `Int 4])]);
+        ("5", `Assoc [("0", `List [`String "Fixed"; `Int 4]); ("1", `List [`String "Fixed"; `Int 5]); ("2", `List [`String "Fixed"; `Int 8]); ("3", `List [`String "Fixed"; `Int 7]); ("4", `List [`String "Fixed"; `Int 9]); ("5", `List [`String "Fixed"; `Int 2]); ("6", `List [`String "Fixed"; `Int 6]); ("7", `List [`String "Fixed"; `Int 1]); ("8", `List [`String "Fixed"; `Int 3])]);
+        ("6", `Assoc [("0", `List [`String "Fixed"; `Int 8]); ("1", `List [`String "Fixed"; `Int 3]); ("2", `List [`String "Fixed"; `Int 6]); ("3", `List [`String "Fixed"; `Int 9]); ("4", `List [`String "Fixed"; `Int 2]); ("5", `List [`String "Fixed"; `Int 4]); ("6", `List [`String "Fixed"; `Int 1]); ("7", `List [`String "Fixed"; `Int 5]); ("8", `List [`String "Fixed"; `Int 7])]);
+        ("7", `Assoc [("0", `List [`String "Fixed"; `Int 2]); ("1", `List [`String "Fixed"; `Int 1]); ("2", `List [`String "Fixed"; `Int 9]); ("3", `List [`String "Fixed"; `Int 8]); ("4", `List [`String "Fixed"; `Int 5]); ("5", `List [`String "Fixed"; `Int 7]); ("6", `List [`String "Fixed"; `Int 4]); ("7", `List [`String "Fixed"; `Int 3]); ("8", `List [`String "Fixed"; `Int 6])]);
+        ("8", `Assoc [("0", `List [`String "Fixed"; `Int 7]); ("1", `List [`String "Fixed"; `Int 4]); ("2", `List [`String "Fixed"; `Int 5]); ("3", `List [`String "Fixed"; `Int 3]); ("4", `List [`String "Fixed"; `Int 1]); ("5", `List [`String "Fixed"; `Int 6]); ("6", `List [`String "Fixed"; `Int 8]); ("7", `List [`String "Fixed"; `Int 9]); ("8", `List [`String "Fixed"; `Int 2])]);
       ]
   in  
-  match Sudoku_board.de_serialize json with 
-  | Some result ->
-    assert_equal (Sudoku_board.equal_test example_board_1 result) true
-  | None ->
-    failwith "de_serialize threw an error"
+  Sudoku_board.de_serialize json
+  |> Option.map ~f:(Sudoku_board.equal example_board_1)
+  |> Option.value_or_thunk ~default: (fun _ -> false)
+  |> assert_bool ""
 
 let test_seed : test =
   test_list
