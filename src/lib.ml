@@ -213,7 +213,7 @@ module Sudoku_board = struct
           match current with
           | Some (Volatile a) ->
               let n = next a in
-              let next_board = set_forced board x y n in
+              let next_board = set board x y n in
               if equal_element Empty n then
                 backtrack next_board ((x, y) :: empty) tl
               else if validator next_board then
