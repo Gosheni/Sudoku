@@ -4,7 +4,10 @@ We implement the game Sudoko including:
     - A board generator
     - A command-line interface client to play the game
         - A hint system 
-            - Hint system will use preemptive sets ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf)) to ensure the hint generated is something the user should have been able to arrive at without guessing.
+            - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board
+            - Hint system will also explain what information a player would look at to arrive at the move being hinted
+            - If no determinate moves can be found, hint system will recommend guesses with least variability
+            - Hint system will use preemptive sets to find moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf))
         - Functionality to save and load boards  
 
     If time permits we might also include more sudoko variants, a highscore system, and a web client. These variants might include "killer sudoko", "baby-sudoko (4x4)" etc.

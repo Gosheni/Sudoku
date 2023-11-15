@@ -14,8 +14,12 @@ module Sudoku_board : sig
   (** First index is the row *)
 
   val get : t -> int -> int -> element option
+  (** given a board and a position, return Some(element) at that position, 
+                                           None if board is invalid or invalid position given *)
   val set : t -> int -> int -> element -> t
+  (** given a board, a position and an element, set the entry on the board at that position to the element *)
   val set_forced : t -> int -> int -> element -> t
+  (** identical to set except set_forced does not enforce is_valid precondition, used to make invalid test boards *)
 
   val is_valid : t -> bool
   (** checks that the board does not violate any sudoku rules, but could have empty values *)
