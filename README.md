@@ -3,12 +3,12 @@ We implement the game Sudoko including:
     - A solver
     - A board generator
     - A command-line interface client to play the game
-        - A hint system 
-            - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board
-            - Hint system will also explain what information a player would look at to arrive at the move being hinted
-            - If no determinate moves can be found, hint system will recommend guesses with least variability
-            - Hint system will use preemptive sets to find moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf))
-        - Functionality to save and load boards  
+    - A hint system 
+      - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board
+      - Hint system will also explain what information a player would look at to arrive at the move being hinted
+      - If no determinate moves can be found, hint system will recommend guesses with least variability
+      - Hint system will use preemptive sets to find moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf))
+   - Functionality to save and load boards  
 
     If time permits we might also include more sudoko variants, a highscore system, and a web client. These variants might include "killer sudoko", "baby-sudoko (4x4)" etc.
 
@@ -67,7 +67,7 @@ We implement the game Sudoko including:
     
     $ ./sudoku.exe move 1 1 6  # example invalid move
     
-    Can't place there because of conflicting value
+    Cannot place there because of conflicting value
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |
@@ -144,7 +144,7 @@ We implement the game Sudoko including:
 5. **Also include a brief list of what order you will implement features.**
     1. Initially we will work on our Sududo library that is the interface for updating and generating sudoku boards.
     2. Then we'll add tests to ensure everything works as expected. 
-    3. Then we will work on out command-line utility
+    3. Then we will work on the command-line utility
     4. If we have the time, we will implement the additional features as stated in **1.** above.
 
 6. **If your project is an OCaml version of some other app in another language or a projust you did in another course etc please cite this other project. In general any code that inspired your code needs to be cited in your submissions.**  
