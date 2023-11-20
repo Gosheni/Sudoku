@@ -17,6 +17,13 @@ module Sudoku_board : sig
   val set_forced : t -> int -> int -> element -> t
   (** Identical to set except set_forced does not enforce is_valid precondition. Used for creating invalid test boards *)
 
+  val get_row : t -> int -> element list
+  (** Returns the row at the given index. Enforces that the given index and board are valid *)
+  val get_col : t -> int -> element list
+  (** Returns the column at the given index. Enforces that the given index and board are valid *)
+  val get_block : t -> int -> element list
+  (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
+  
   val is_valid : t -> bool
   (** Checks that the board does not violate any sudoku rules, but could have empty values *)
   val is_solved : t -> bool
