@@ -1,5 +1,5 @@
 module Sudoku_board : sig
-  type element = Empty | Fixed of int | Volatile of int
+  type element = Empty | Fixed of int | Volatile of int [@@deriving equal]
 
   type t
 
@@ -17,6 +17,7 @@ module Sudoku_board : sig
   val set_forced : t -> int -> int -> element -> t
   (** Identical to set except set_forced does not enforce is_valid precondition. Used for creating invalid test boards *)
 
+  val get_all : t -> element list 
   val get_row : t -> int -> element list
   (** Returns the row at the given index. Enforces that the given index and board are valid *)
   val get_col : t -> int -> element list

@@ -317,6 +317,32 @@ let test_solve_uniquely _ =
   assert_bool ""
   @@ equal solved (solve_with_unique_solution missing_one |> force_unwrap)
 
+let test_generate_solved : test =
+  List.init 10 ~f:(fun _ ->
+      "test generate_solved" >:: fun _ ->
+      assert_bool "" (Sudoku_board.is_solved @@ Sudoku_board.generate_random ()))
+  |> test_list
+
+let number_of_empty (board : Sudoku_board.t) =
+  Sudoku_board.get_all board |> List.count ~f:(Sudoku_board.equal_element Empty)
+
+let test_generate_unsolved : test =
+  let test_generate_single_unsolved _ : test =
+    let board = Sudoku_board.generate_random () in
+    List.range 1 20
+    |> List.map ~f:(fun to_remove ->
+           "test generate_single_unsolved" >:: fun _ ->
+           let unsolved = Sudoku_board.generate_degenerate board to_remove in
+           assert_equal false @@ Sudoku_board.is_solved unsolved;
+           if to_remove <= 3 then
+             assert_equal to_remove @@ number_of_empty unsolved
+             (* If you remove 3 elements from a solved sudoku it is guaranteed to still be solvable *)
+           else assert_bool "" @@ (number_of_empty unsolved <= to_remove))
+    |> test_list
+  in
+
+  List.init 10 ~f:test_generate_single_unsolved |> test_list
+
 let series =
   "Tests"
   >::: [
@@ -327,8 +353,8 @@ let series =
          test_seed;
          "test solve" >:: test_solve;
          "test solve uniquely" >:: test_solve_uniquely;
-         ("test generate solved board" >:: fun _ -> ());
-         ("test generate unsolved board" >:: fun _ -> ());
+         test_generate_solved;
+         test_generate_unsolved;
        ]
 
 let () = run_test_tt_main series

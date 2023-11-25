@@ -22,6 +22,9 @@ module Sudoku_board = struct
     let open Option.Let_syntax in
     Map.find board x >>= Fn.flip Map.find y
 
+  let get_all (board : t) : element list =
+    Map.data board |> List.map ~f:Map.data |> List.join
+
   let check_keys (board : t) : bool =
     let map_has_keys_one_through_nine map =
       Map.keys map |> List.equal equal_int (List.range 0 9)
@@ -95,8 +98,8 @@ module Sudoku_board = struct
 
   let is_solved (board : t) : bool =
     is_valid board
-    && Map.exists board ~f:(fun row ->
-           Map.exists row ~f:(equal_element Empty) |> not)
+    && Map.exists board ~f:(fun row -> Map.exists row ~f:(equal_element Empty))
+       |> not
 
   let update (board : t) (x : int) (y : int)
       (element : element option -> element) : t =
@@ -231,17 +234,32 @@ module Sudoku_board = struct
   let generate_degenerate (board : t) (difficulty : int) : t =
     assert (is_solved board && difficulty > 0);
 
-    let rec aux (board : t) (to_remove : int) : t =
+    let sample_from_list (ls : 'a list) : ('a * 'a list) option =
+      let length = List.length ls in
+      if length = 0 then None
+      else
+        let n = Random.int length in
+        let element = List.nth_exn ls n in
+        let updated_list = List.filteri ls ~f:(fun i _ -> i <> n) in
+        Some (element, updated_list)
+    in
+    let coordinates =
+      List.cartesian_product (List.range 0 9) (List.range 0 9)
+    in
+
+    let rec aux (board : t) (to_remove : int)
+        (possible_coordinates : (int * int) list) : t =
       if to_remove = 0 then board
       else
-        let row = Random.int 9 in
-        let col = Random.int 9 in
-        let new_board = set board row col Empty in
-        if Option.is_some @@ solve_with_unique_solution new_board then
-          aux new_board (to_remove - 1)
-        else board
+        match sample_from_list possible_coordinates with
+        | None -> board
+        | Some ((row, col), remaining_coordinates) ->
+            let new_board = set board row col Empty in
+            if Option.is_some @@ solve_with_unique_solution new_board then
+              aux new_board (to_remove - 1) remaining_coordinates
+            else board
     in
-    aux board difficulty
+    aux board difficulty coordinates
 
   type json = Yojson.Safe.t
 
@@ -338,5 +356,5 @@ module Sudoku_game = struct
         let new_board = set board move.x move.y @@ Volatile move_value in
         if is_valid new_board then Ok new_board else Error Invalid_position
 
-  let generate_hint (board : Sudoku_board.t) : hint = failwith "Not implented"
+  let generate_hint (board : Sudoku_board.t) : hint = assert false
 end
