@@ -94,10 +94,10 @@ module Sudoku_board = struct
     && (check_section @@ get_block board)
 
   let is_solved (board : t) : bool =
-    is_valid board &&
-    Map.exists board ~f:(fun row ->
-        Map.exists row ~f:(equal_element Empty) |> not)
-    
+    is_valid board
+    && Map.exists board ~f:(fun row ->
+           Map.exists row ~f:(equal_element Empty) |> not)
+
   let update (board : t) (x : int) (y : int)
       (element : element option -> element) : t =
     assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
