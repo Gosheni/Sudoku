@@ -6,7 +6,10 @@ open Core
 open OUnit2
 open Lib
 
-let _ = List.find
+let force_unwrap (optional : 'a option) : 'a =
+  match optional with
+  | None -> failwith "force_unwrap only accepts 'Some' values"
+  | Some a -> a
 
 let test_pretty_printer _ =
   let expected_empty =
@@ -290,6 +293,30 @@ let test_seed : test =
         assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
     ]
 
+let test_solve _ =
+  let open Sudoku_board in
+  (let solved = solve_with_backtracking empty 0 is_valid in
+   match solved with
+   | None -> assert_failure ""
+   | Some sudoku ->
+       assert_bool "" @@ is_solved sudoku;
+       let solve_solved =
+         solve_with_backtracking sudoku 0 is_valid |> force_unwrap
+       in
+       assert_bool "" @@ equal sudoku solve_solved);
+  let invalid =
+    set empty 0 0 (Volatile 1) |> fun board -> set board 0 1 (Volatile 1)
+  in
+  assert_equal None @@ solve_with_backtracking invalid 0 is_valid
+
+let test_solve_uniquely _ =
+  let open Sudoku_board in
+  assert_equal None @@ solve_with_unique_solution empty;
+  let solved = solve_with_backtracking empty 0 is_valid |> force_unwrap in
+  let missing_one = set solved 0 0 Empty in
+  assert_bool ""
+  @@ equal solved (solve_with_unique_solution missing_one |> force_unwrap)
+
 let series =
   "Tests"
   >::: [
@@ -298,6 +325,10 @@ let series =
          "test is_valid" >:: test_is_valid;
          "test deserialize_valid" >:: test_deserialize_valid_json;
          test_seed;
+         "test solve" >:: test_solve;
+         "test solve uniquely" >:: test_solve_uniquely;
+         ("test generate solved board" >:: fun _ -> ());
+         ("test generate unsolved board" >:: fun _ -> ());
        ]
 
 let () = run_test_tt_main series
