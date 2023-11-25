@@ -218,8 +218,7 @@ module Sudoku_board = struct
             | Some (backtracked_board, new_empty, new_added_to) ->
                 aux backtracked_board new_empty new_added_to)
     in
-
-    aux board all_empty []
+    if is_valid board then aux board all_empty [] else None
 
   let solve_with_unique_solution (board : t) : t option =
     match solve_with_backtracking board 0 is_valid with
