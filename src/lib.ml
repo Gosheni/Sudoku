@@ -35,90 +35,43 @@ module Sudoku_board = struct
     in
 
     let check_keys (board : t) : bool =
+      (* check row keys are 0-8 *)
       if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then
-        (* check row keys are 0-8 *)
         false (* if not, return false (invalid board) *)
       else
-        let check_rows (row : row) =
-          Map.keys row |> List.equal equal_int (List.range 0 9)
-        in
         (* check col keys are 0-8*)
-        let rec loop_rows (row_idx : int) acc =
-          if row_idx >= 9 then acc
-          else
-            Map.find_exn board
-              row_idx (* we already checked keys so find_exn should be fine *)
-            |> check_rows
-            |> fun valid_row -> loop_rows (row_idx + 1) (acc && valid_row)
-        in
-        loop_rows 0 true
+        Map.for_all board ~f:(fun row ->
+            row |> Map.keys |> List.equal equal_int (List.range 0 9))
     in
     let check_rows (board : t) (func_to_check : element list -> bool) : bool =
-      let check_row (row : row) = row |> Map.data |> func_to_check in
-      let rec loop_rows (x : int) (acc : bool) =
-        if x >= 9 then acc
-        else
-          (* iterate rows 1 through *)
-          Map.find_exn board
-            x (* we already checked keys so find_exn should be fine *)
-          |> check_row |> ( && ) acc
-          |> loop_rows (x + 1)
-      in
-      loop_rows 0 true
+      Map.for_all board ~f:(fun row -> row |> Map.data |> func_to_check)
     in
-    let check_block (board : t) (func_to_check : element list -> bool) : bool =
+    let check_blocks (board : t) (func_to_check : element list -> bool) : bool =
       let check_block (block_num : int) =
         let row_lower = block_num / 3 * 3 in
         let row_upper = row_lower + 3 in
         let col_lower = block_num mod 3 * 3 in
         let col_upper = col_lower + 3 in
-        let rec loop_block x y acc =
-          if y >= col_upper then acc
-          else if x >= row_upper then loop_block row_lower (y + 1) acc
-          else
-            match get board x y with
-            | None -> loop_block (x + 1) y acc
-            | Some elem -> loop_block (x + 1) y (elem :: acc)
+        let coordinates_to_check =
+          List.cartesian_product
+            (List.range row_lower row_upper)
+            (List.range col_lower col_upper)
         in
-        let curr_block = loop_block row_lower col_lower [] in
+        let curr_block =
+          List.map coordinates_to_check ~f:(fun (x, y) ->
+              match get board x y with
+              | None -> assert false
+              | Some element -> element)
+        in
         func_to_check curr_block
       in
-      let rec loop_blocks (block_num : int) (acc : bool) =
-        if block_num >= 9 then acc
-        else
-          check_block block_num |> fun valid_block ->
-          loop_blocks (block_num + 1) (acc && valid_block)
-      in
-      loop_blocks 0 true
+      List.range 0 9 |> List.for_all ~f:check_block
     in
 
-    let check_cols (board : t) (func_to_check : element list -> bool) : bool =
-      let check_col (col_num : int) =
-        let rec loop_rows (row_idx : int) acc =
-          if row_idx >= 9 then acc
-          else
-            match get board row_idx col_num with
-            | None ->
-                failwith
-                  "tried to access invalid element or board incorrectly \
-                   structured"
-            | Some elem -> loop_rows (row_idx + 1) (elem :: acc)
-        in
-        let curr_col = loop_rows 0 [] in
-        func_to_check curr_col
-      in
-      let rec loop_cols (col_num : int) (acc : bool) =
-        if col_num >= 9 then acc
-        else
-          check_col col_num |> fun valid_col ->
-          loop_cols (col_num + 1) (acc && valid_col)
-      in
-      loop_cols 0 true
-    in
     check_keys board
     && check_rows board is_valid_lst
-    && check_cols board is_valid_lst
-    && check_block board is_valid_lst
+    && check_rows (Map.transpose_keys (module Int) board) is_valid_lst
+    && check_blocks board is_valid_lst
 
   let is_solved (board : t) : bool =
     if is_valid board then
@@ -126,24 +79,22 @@ module Sudoku_board = struct
           Map.exists row ~f:(equal_element Empty) |> not)
     else false
 
-  let update (board : t) (x : int) (y : int)
-      (element : element option -> element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
-    Map.update board x ~f:(fun row ->
-        match row with
-        | None -> assert false
-        | Some row -> Map.update row y ~f:element)
-
   let set (board : t) (x : int) (y : int) (element : element) : t =
     assert (
       0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element
       && is_valid board);
-    update board x y (fun _ -> element)
+    Map.update board x ~f:(fun row ->
+        match row with
+        | None -> assert false
+        | Some row -> Map.update row y ~f:(fun _ -> element))
 
   (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
   let set_forced (board : t) (x : int) (y : int) (element : element) : t =
     assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element);
-    update board x y (fun _ -> element)
+    Map.update board x ~f:(fun row ->
+        match row with
+        | None -> assert false
+        | Some row -> Map.update row y ~f:(fun _ -> element))
 
   let empty : t =
     let a = Map.empty (module Int) in
