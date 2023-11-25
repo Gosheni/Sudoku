@@ -85,20 +85,13 @@ module Sudoku_board = struct
       let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
       no_dups && no_invalid
     in
-    let check_section (get_section : t -> int -> element list) : bool = 
-      let rec loop_list (list_idx : int) (acc : bool) =
-        if list_idx >= 9 then acc
-        else
-          get_section board list_idx
-          |> is_valid_lst |> ( && ) acc
-          |> loop_list (list_idx + 1)
-      in
-      loop_list 0 true
+    let check_section (get_section : int -> element list) : bool =
+      List.range 0 9 |> List.map ~f:get_section |> List.for_all ~f:is_valid_lst
     in
     check_keys board
-    && check_section get_row
-    && check_section get_col
-    && check_section get_block
+    && (check_section @@ get_row board)
+    && (check_section @@ get_col board)
+    && (check_section @@ get_block board)
 
   let is_solved (board : t) : bool =
     is_valid board &&
