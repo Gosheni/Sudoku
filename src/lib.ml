@@ -23,23 +23,17 @@ module Sudoku_board = struct
     Map.find board x >>= Fn.flip Map.find y
 
   let check_keys (board : t) : bool =
-    if Map.keys board |> List.equal equal_int (List.range 0 9) |> not then
+    let map_has_keys_one_through_nine map =
+      Map.keys map |> List.equal equal_int (List.range 0 9)
+    in
+    if map_has_keys_one_through_nine board |> not then
       (* check row keys are 0-8 *)
       false (* if not, return false (invalid board) *)
     else
-      let check_rows (row : row) =
-        Map.keys row |> List.equal equal_int (List.range 0 9)
-      in
       (* check col keys are 0-8*)
-      let rec loop_rows (row_idx : int) acc =
-        if row_idx >= 9 then acc
-        else
-          Map.find_exn board
-            row_idx (* we already checked keys so find_exn should be fine *)
-          |> check_rows
-          |> fun valid_row -> loop_rows (row_idx + 1) (acc && valid_row)
-      in
-      loop_rows 0 true
+      List.range 0 9
+      |> List.map ~f:(Map.find_exn board)
+      |> List.for_all ~f:map_has_keys_one_through_nine
 
   let get_row (board : t) (x : int) : element list = 
     assert (0 <= x && x <= 8 && check_keys board);
