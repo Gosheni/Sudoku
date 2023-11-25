@@ -35,43 +35,45 @@ module Sudoku_board = struct
       |> List.map ~f:(Map.find_exn board)
       |> List.for_all ~f:map_has_keys_one_through_nine
 
-  let get_row (board : t) (x : int) : element list = 
+  let get_row (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8 && check_keys board);
-    Map.find_exn board x
-    |> Map.data
+    Map.find_exn board x |> Map.data
 
   let get_col (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8 && check_keys board);
-    Map.map board ~f:(fun row -> Map.find_exn row x)
-    |> Map.data
+    Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
 
-  (* assumes that sub-blocks correspond to ints in the following manner: 
-        1 2 3   4 5 6   7 8 9
-      -------------------------
-    1 |       |       |       |
-    2 |   0   |   1   |   2   |
-    3 |       |       |       |
-      -------------------------
-    4 |       |       |       |
-    5 |   3   |   4   |   5   |
-    6 |       |       |       |
-      -------------------------
-    7 |       |       |       |
-    8 |   6   |   7   |   8   |
-    9 |       |       |       |
-      -------------------------
+  (* assumes that sub-blocks correspond to ints in the following manner:
+         1 2 3   4 5 6   7 8 9
+       -------------------------
+     1 |       |       |       |
+     2 |   0   |   1   |   2   |
+     3 |       |       |       |
+       -------------------------
+     4 |       |       |       |
+     5 |   3   |   4   |   5   |
+     6 |       |       |       |
+       -------------------------
+     7 |       |       |       |
+     8 |   6   |   7   |   8   |
+     9 |       |       |       |
+       -------------------------
   *)
-  let get_block (board : t) (x : int) : element list = 
+  let get_block (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8 && check_keys board);
     let row_lower = x / 3 * 3 in
-    let row_upper = row_lower + 2 in (* we will use inclusive bounds so plus 2 *)
+    let row_upper = row_lower + 2 in
+    (* we will use inclusive bounds so plus 2 *)
     let col_lower = x mod 3 * 3 in
-    let col_upper = col_lower + 2 in (* we will use inclusive bounds so plus 2 *)
-    Map.fold_range_inclusive board ~min:row_lower ~max:row_upper ~init:[] 
+    let col_upper = col_lower + 2 in
+    (* we will use inclusive bounds so plus 2 *)
+    Map.fold_range_inclusive board ~min:row_lower ~max:row_upper ~init:[]
       ~f:(fun ~key:_ ~data:row acc ->
-      acc @ (Map.subrange row ~lower_bound:(Incl col_lower) ~upper_bound:(Incl col_upper) |> Map.data)
-      )
-  
+        acc
+        @ (Map.subrange row ~lower_bound:(Incl col_lower)
+             ~upper_bound:(Incl col_upper)
+          |> Map.data))
+
   let is_valid (board : t) : bool =
     let is_valid_lst (lst : element list) : bool =
       let seen =
