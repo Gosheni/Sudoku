@@ -1,12 +1,9 @@
 open Core
 
-module SBoard = Sudoku_board
-
 let () =
   Command.basic
     ~summary:"sudoku.exe - Generate Sudoku Game from a command line"
-    (let open Command.Let_syntax in
-      let%map_open.Command command_string =
+    (let%map_open.Command command_string =
         flag "--command" (required string) ~doc:"Command (init, hint, solve, save, move)"
       and command_args =
         anon (maybe (sequence ("arg" %: string)))
