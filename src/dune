@@ -1,32 +1,27 @@
-
 (library
  (name grid)
  (modules grid)
- (libraries core
- yojson)
+ (libraries core yojson)
  (preprocess
   (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
 (library
  (name board)
  (modules board)
- (libraries core
- yojson grid)
+ (libraries core yojson grid)
  (preprocess
   (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
-
-
-
+(library
+ (name game)
+ (modules game)
+ (libraries core yojson board)
+ (preprocess
+  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
 (executable
-  (name sudoku)
-  (modules sudoku)
-  (libraries
-    grid
-    board
-    core
-    yojson
-    core_unix.command_unix)
-  (preprocess
-  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
+ (name sudoku)
+ (modules sudoku)
+ (libraries grid board core game yojson core_unix.command_unix)
+ (preprocess
+  (pps ppx_jane)))
