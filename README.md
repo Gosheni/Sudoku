@@ -33,7 +33,7 @@ We implement the game Sudoko including:
 4. **Include a mock of a use of your application, along the lines of the Minesweeper example above but showing the complete protocol.**
 
     ``` sh
-    $ ./sudoku.exe init  # initialize a new game
+    $ ./sudoku.exe --command init  # initialize a new game
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |
@@ -49,7 +49,7 @@ We implement the game Sudoko including:
    9 | 2     |       | 4     |
       -------------------------
 
-    $ ./sudoku.exe move 8 9 2  # example move, add value 2 to row 8 col 9
+    $ ./sudoku.exe --command move 8 9 2  # example move, add value 2 to row 8 col 9
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |
@@ -65,7 +65,7 @@ We implement the game Sudoko including:
    9 | 2     |       | 4     |
       -------------------------
     
-    $ ./sudoku.exe move 1 1 6  # example invalid move
+    $ ./sudoku.exe --command move 1 1 6  # example invalid move
     
     Cannot place there because of conflicting value
         1 2 3   4 5 6   7 8 9
@@ -83,7 +83,7 @@ We implement the game Sudoko including:
    9 | 2     |       | 4     |
       -------------------------
 
-    $ ./sudoku.exe hint
+    $ ./sudoku.exe --command hint
 
     Possible move is 8 at 2, 9
         1 2 3   4 5 6   7 8 9
@@ -101,7 +101,7 @@ We implement the game Sudoko including:
    9 | 2     |       | 4     |
       -------------------------
 
-      $ ./sudoku.exe solve
+      $ ./sudoku.exe --command solve
         1 2 3   4 5 6   7 8 9
       -------------------------
     1 | 5 3 6 | 8 2 7 | 9 4 1 |
