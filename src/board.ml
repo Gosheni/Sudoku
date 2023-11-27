@@ -3,79 +3,25 @@
 open Core
 
 module Sudoku_board = struct
-  type element = Empty | Fixed of int | Volatile of int
+  type _element = Empty | Fixed of int | Volatile of int
   [@@deriving yojson, equal]
 
-  type row = (int, element, Int.comparator_witness) Map.t
-  type t = (int, row, Int.comparator_witness) Map.t
+  module S_element = struct
+    type element = _element [@@deriving yojson, equal]
 
-  let element_is_valid (element : element) : bool =
-    match element with
-    | Volatile a | Fixed a -> 1 <= a && a <= 9
-    | Empty -> true
+    let element_is_valid (element : element) : bool =
+      match element with
+      | Volatile a | Fixed a -> 1 <= a && a <= 9
+      | Empty -> true
 
-  let equal (b1 : t) (b2 : t) : bool =
-    let equal_row = Map.equal equal_element in
-    Map.equal equal_row b1 b2
+    let empty_element = Empty
 
-  let get (board : t) (x : int) (y : int) : element option =
-    let open Option.Let_syntax in
-    Map.find board x >>= Fn.flip Map.find y
+    let element_to_string = function
+      | Empty -> " "
+      | Fixed a | Volatile a -> Int.to_string a
+  end
 
-  let get_all (board : t) : element list =
-    Map.data board |> List.map ~f:Map.data |> List.join
-
-  let check_keys (board : t) : bool =
-    let map_has_keys_one_through_nine map =
-      Map.keys map |> List.equal equal_int (List.range 0 9)
-    in
-    if map_has_keys_one_through_nine board |> not then
-      (* check row keys are 0-8 *)
-      false (* if not, return false (invalid board) *)
-    else
-      (* check col keys are 0-8*)
-      List.range 0 9
-      |> List.map ~f:(Map.find_exn board)
-      |> List.for_all ~f:map_has_keys_one_through_nine
-
-  let get_row (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
-    Map.find_exn board x |> Map.data
-
-  let get_col (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
-    Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
-
-  (* assumes that sub-blocks correspond to ints in the following manner:
-         0 1 2   3 4 5   6 7 8
-       -------------------------
-     0 |       |       |       |
-     1 |   0   |   1   |   2   |
-     2 |       |       |       |
-       -------------------------
-     3 |       |       |       |
-     4 |   3   |   4   |   5   |
-     5 |       |       |       |
-       -------------------------
-     6 |       |       |       |
-     7 |   6   |   7   |   8   |
-     8 |       |       |       |
-       -------------------------
-  *)
-  let get_block (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
-    let row_lower = x / 3 * 3 in
-    let row_upper = row_lower + 2 in
-    (* we will use inclusive bounds so plus 2 *)
-    let col_lower = x mod 3 * 3 in
-    let col_upper = col_lower + 2 in
-    (* we will use inclusive bounds so plus 2 *)
-    Map.fold_range_inclusive board ~min:row_lower ~max:row_upper ~init:[]
-      ~f:(fun ~key:_ ~data:row acc ->
-        acc
-        @ (Map.subrange row ~lower_bound:(Incl col_lower)
-             ~upper_bound:(Incl col_upper)
-          |> Map.data))
+  include Grid.Make_sudoku_grid (S_element)
 
   let is_valid ?(updated : (int * int) option) (board : t) : bool =
     let is_valid_lst (lst : element list) : bool =
@@ -108,36 +54,6 @@ module Sudoku_board = struct
     is_valid board
     && Map.exists board ~f:(fun row -> Map.exists row ~f:(equal_element Empty))
        |> not
-
-  let update (board : t) (x : int) (y : int)
-      (element : element option -> element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
-    Map.update board x ~f:(fun row ->
-        match row with
-        | None -> assert false
-        | Some row -> Map.update row y ~f:element)
-
-  let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (
-      0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element
-      && is_valid board);
-    update board x y (fun _ -> element)
-
-  (* doesn't check if is_valid before setting, useful for creating boards for debugging *)
-  let set_forced (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element);
-    update board x y (fun _ -> element)
-
-  let empty : t =
-    let a = Map.empty (module Int) in
-    let empty_row =
-      List.init 9 ~f:(fun _ -> Empty)
-      |> List.foldi ~init:a ~f:(fun index map element ->
-             Map.add_exn map ~key:index ~data:element)
-    in
-    List.init 9 ~f:(fun _ -> empty_row)
-    |> List.foldi ~init:a ~f:(fun index map element ->
-           Map.add_exn map ~key:index ~data:element)
 
   let seed_to_list (seed : int) : int list =
     let rec aux (state : int list) (seed : int)
@@ -317,10 +233,6 @@ module Sudoku_board = struct
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in
-    let element_to_string = function
-      | Empty -> " "
-      | Fixed a | Volatile a -> Int.to_string a
-    in
     let pretty_print_row (row : row) : string =
       Map.fold row ~init:"" ~f:(fun ~key:col_num ~data:value accum ->
           let block = element_to_string value ^ " " in

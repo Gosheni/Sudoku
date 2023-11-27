@@ -4,7 +4,8 @@
 
 open Core
 open OUnit2
-open Lib
+open Board
+(*open Grid*)
 
 let force_unwrap (optional : 'a option) : 'a =
   match optional with

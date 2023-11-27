@@ -1,29 +1,22 @@
+(*module Hint_system = struct 
+	module Element: Grid = struct 
+		type element = int list
+		let empty_element: element = []
+	include Sudoku_grid(Element)
+
+	let generate_hints (board: Sudoku_board.t): t = 
+		get 
+
+end 
+*)
+
+
+
 module Sudoku_board : sig
-  type element = Empty | Fixed of int | Volatile of int [@@deriving equal]
+  type _element = Empty | Fixed of int | Volatile of int
+  module S_element: Grid.Element with type element = _element
 
-  type t
-
-  val equal : t -> t -> bool
-  (** Compares two sudoku boards, returns true iff the two boards has the same dimension and all the elements in are equal *)
-
-  val empty : t
-  (** First index is the row *)
-
-  val get : t -> int -> int -> element option
-  (** Given a board and a position, returns the element at that position, 
-      otherwise None is returned if the board is invalid or an invalid position was given *)
-  val set : t -> int -> int -> element -> t
-  (** Changes the value at a given coordinate to the given given element. Enforces that the given board is valid. *)
-  val set_forced : t -> int -> int -> element -> t
-  (** Identical to set except set_forced does not enforce is_valid precondition. Used for creating invalid test boards *)
-
-  val get_all : t -> element list 
-  val get_row : t -> int -> element list
-  (** Returns the row at the given index. Enforces that the given index and board are valid *)
-  val get_col : t -> int -> element list
-  (** Returns the column at the given index. Enforces that the given index and board are valid *)
-  val get_block : t -> int -> element list
-  (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
+  include Grid.Sudoku_grid with type element = S_element.element
   
   val is_valid : ?updated:(int * int) -> t -> bool
   (** Checks that the board does not violate any sudoku rules, but could have empty values *)
