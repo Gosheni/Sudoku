@@ -5,3 +5,14 @@
  yojson)
  (preprocess
   (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
+
+(executable
+  (name sudoku)
+  (modules sudoku)
+  (libraries
+    lib
+    core
+    yojson
+    core_unix.command_unix)
+  (preprocess
+  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
