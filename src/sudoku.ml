@@ -15,14 +15,21 @@ let () =
       | "move" ->
         (match command_args with
         | Some args ->
-          let args_list = List.map ~f:int_of_string args in
-          (match args_list with
-          | [row; col; value] ->
-            Stdio.printf "Made a move: Add value %d to row %d col %d\n" value row col;
-          | _ ->
-            failwith "Invalid arguments for move command")
-        | None ->
-          Stdio.print_endline "No arguments provided for move command";
+          (match args with
+           | [a; b; c] ->
+             (try
+                let value = int_of_string a in
+                let row = int_of_string b in
+                let col = int_of_string c in
+                if (1 <= value && value <= 9) && (1 <= row && row <= 9) && (1 <= col && col <= 9) then
+                  Stdio.printf "Made a move: Add value %d to row %d col %d\n" value row col
+                else
+                  Stdio.print_endline "Invalid arguments for move command: Values out of range (1-9)"
+              with
+              | Failure _ -> Stdio.print_endline "Invalid arguments for move command")
+           | _ -> Stdio.print_endline "Invalid arguments for move command";
+           );
+        | None -> Stdio.print_endline "No arguments provided for move command";
         );
       | "hint" ->
         Stdio.print_endline "Possible move is 8 at 2, 9";
