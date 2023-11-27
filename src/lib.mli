@@ -25,7 +25,7 @@ module Sudoku_board : sig
   val get_block : t -> int -> element list
   (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
   
-  val is_valid : t -> bool
+  val is_valid : ?updated:(int * int) -> t -> bool
   (** Checks that the board does not violate any sudoku rules, but could have empty values *)
   val is_solved : t -> bool
   (** Checks that the board is solved i.e. does not violate any sudoku rules and all cells are non-empty *)
@@ -40,7 +40,7 @@ module Sudoku_board : sig
   (** Returns a list containing the numbers 1 through 9 exactly once. The order of the elements depend on the seed 
       This is a helper function for backtracking that is exposed to allow testing *)
 
-  val solve_with_backtracking : t -> int -> (t -> bool) -> t option
+  val solve_with_backtracking : t -> int -> (?updated:(int * int)  -> t -> bool) -> t option
   (** Solves a sudoku with backtracking requiring the solution to be unique *)
 
   val solve_with_unique_solution : t -> t option

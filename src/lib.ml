@@ -47,19 +47,19 @@ module Sudoku_board = struct
     Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
 
   (* assumes that sub-blocks correspond to ints in the following manner:
-         1 2 3   4 5 6   7 8 9
+         0 1 2   3 4 5   6 7 8
        -------------------------
-     1 |       |       |       |
-     2 |   0   |   1   |   2   |
+     0 |       |       |       |
+     1 |   0   |   1   |   2   |
+     2 |       |       |       |
+       -------------------------
      3 |       |       |       |
+     4 |   3   |   4   |   5   |
+     5 |       |       |       |
        -------------------------
-     4 |       |       |       |
-     5 |   3   |   4   |   5   |
      6 |       |       |       |
-       -------------------------
-     7 |       |       |       |
-     8 |   6   |   7   |   8   |
-     9 |       |       |       |
+     7 |   6   |   7   |   8   |
+     8 |       |       |       |
        -------------------------
   *)
   let get_block (board : t) (x : int) : element list =
@@ -77,7 +77,7 @@ module Sudoku_board = struct
              ~upper_bound:(Incl col_upper)
           |> Map.data))
 
-  let is_valid (board : t) : bool =
+  let is_valid ?(updated : (int * int) option) (board : t) : bool =
     let is_valid_lst (lst : element list) : bool =
       let seen =
         List.filter_map lst ~f:(function
@@ -85,16 +85,24 @@ module Sudoku_board = struct
           | Fixed a | Volatile a -> Some a)
       in
       let no_dups = List.contains_dup seen ~compare:compare_int |> not in
-      let no_invalid = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
-      no_dups && no_invalid
+      let no_invalid _ = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
+      no_dups && no_invalid ()
     in
     let check_section (get_section : int -> element list) : bool =
-      List.range 0 9 |> List.map ~f:get_section |> List.for_all ~f:is_valid_lst
+      List.range 0 9
+      |> List.for_all ~f:(fun i -> i |> get_section |> is_valid_lst)
     in
-    check_keys board
-    && (check_section @@ get_row board)
-    && (check_section @@ get_col board)
-    && (check_section @@ get_block board)
+
+    match updated with
+    | None ->
+        check_keys board
+        && (check_section @@ get_row board)
+        && (check_section @@ get_col board)
+        && (check_section @@ get_block board)
+    | Some (x, y) ->
+        get_row board x |> is_valid_lst
+        && get_col board y |> is_valid_lst
+        && get_block board ((3 * (x / 3)) + (y / 3)) |> is_valid_lst
 
   let is_solved (board : t) : bool =
     is_valid board
@@ -148,8 +156,8 @@ module Sudoku_board = struct
     in
     aux [] seed 9 |> List.rev
 
-  let solve_with_backtracking (board : t) (seed : int) (validator : t -> bool) :
-      t option =
+  let solve_with_backtracking (board : t) (seed : int)
+      (validator : ?updated:int * int -> t -> bool) : t option =
     (* Optimizations Only check the validity of the block, row, and column that has been changed. *)
     let all_empty : (int * int) list =
       Map.to_alist board
@@ -192,7 +200,7 @@ module Sudoku_board = struct
               (* set_forced due to the incomming board being invalid *)
               if equal_element Empty n then
                 backtrack next_board ((x, y) :: empty) tl
-              else if validator next_board then
+              else if validator ~updated:(x, y) next_board then
                 Some (next_board, empty, added_to)
               else backtrack next_board empty added_to
           | _ -> assert false)
@@ -204,23 +212,30 @@ module Sudoku_board = struct
       | [] -> Some board
       | (x, y) :: tl -> (
           let new_board = set board x y @@ Volatile first_guess in
-          if validator new_board then aux new_board tl ((x, y) :: added_to)
+          if validator ~updated:(x, y) new_board then
+            aux new_board tl ((x, y) :: added_to)
           else
             match backtrack new_board tl ((x, y) :: added_to) with
             | None -> None
             | Some (backtracked_board, new_empty, new_added_to) ->
                 aux backtracked_board new_empty new_added_to)
     in
-    if is_valid board then aux board all_empty [] else None
+    if validator board then aux board all_empty [] else None
 
   let solve_with_unique_solution (board : t) : t option =
     match solve_with_backtracking board 0 is_valid with
     | None -> None
     | Some solution -> (
         let other_solution =
-          solve_with_backtracking board 0 (fun board ->
-              is_valid board && equal solution board |> not)
+          solve_with_backtracking board 0
+            (fun ?(updated : (int * int) option) board ->
+              match updated with
+              | None -> is_valid board && equal solution board |> not
+              | Some coordinate ->
+                  is_valid ~updated:coordinate board
+                  && equal solution board |> not)
         in
+
         match other_solution with None -> Some solution | _ -> None)
 
   let solve (_ : t) : t option = None
