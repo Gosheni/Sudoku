@@ -329,11 +329,13 @@ let number_of_empty (board : Sudoku_board.t) =
 let test_generate_unsolved : test =
   let test_generate_single_unsolved _ : test =
     let board = Sudoku_board.generate_random () in
-    List.range 1 20
+    (81 :: List.range 1 20)
     |> List.map ~f:(fun to_remove ->
            "test generate_single_unsolved" >:: fun _ ->
            let unsolved = Sudoku_board.generate_degenerate board to_remove in
            assert_equal false @@ Sudoku_board.is_solved unsolved;
+           assert_bool ""
+             (Sudoku_board.solve_with_unique_solution unsolved |> Option.is_some);
            if to_remove <= 3 then
              assert_equal to_remove @@ number_of_empty unsolved
              (* If you remove 3 elements from a solved sudoku it is guaranteed to still be solvable *)
