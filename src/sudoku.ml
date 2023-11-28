@@ -34,7 +34,7 @@ let () =
       | "move", Some _ ->
         Stdio.print_endline "Invalid arguments for move command"
       | "save", Some [arg] when String.is_suffix arg ~suffix:".json" ->
-        Stdio.printf "Current board saved with args: %s\n" arg
+        Stdio.printf "Current board saved to %s\n" arg
       | "save", Some _ ->
         Stdio.print_endline "Invalid filename"   
       | _ ->
