@@ -10,8 +10,16 @@ let () =
       in
     fun () ->
       match String.lowercase command_string with
-      | "init" ->
-        Stdio.print_endline "Initialized a new game!";
+      | "init" | "hint" | "solve" ->
+        (match command_args with
+        | None ->
+          (match command_string with
+          | "init" -> Stdio.print_endline "Initialized a new game!"
+          | "hint" -> Stdio.print_endline "Possible move is 8 at 2, 9"
+          | "solve" -> Stdio.print_endline "Solved the Sudoku game!"
+          | _ -> ());
+        | _ -> Stdio.print_endline "Invalid arguments for command";
+        );
       | "move" ->
         (match command_args with
         | Some args ->
@@ -31,10 +39,6 @@ let () =
            );
         | None -> Stdio.print_endline "No arguments provided for move command";
         );
-      | "hint" ->
-        Stdio.print_endline "Possible move is 8 at 2, 9";
-      | "solve" ->
-        Stdio.print_endline "Solved the Sudoku game!";
       | "save" ->
         (match command_args with
         | Some args ->
