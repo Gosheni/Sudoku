@@ -5,6 +5,7 @@
 open Core
 open OUnit2
 open Board
+
 (* open Hint *)
 open Game
 (*open Grid*)
@@ -41,10 +42,9 @@ let create_board elems_list =
       let col = i mod 9 in
       let elem_int = List.nth_exn elems_list row |> Fn.flip List.nth_exn col in
       if elem_int = 0 then
-        Sudoku_board.set_forced acc_board row col Empty |> loop_board (i + 1)
+        Sudoku_board.set acc_board row col Empty |> loop_board (i + 1)
       else
-        Sudoku_board.set_forced acc_board row col (Fixed elem_int)
-        |> loop_board (i + 1)
+        Sudoku_board.set acc_board row col (Fixed elem_int) |> loop_board (i + 1)
   in
   loop_board 0 Sudoku_board.empty
 
@@ -155,7 +155,6 @@ let test_is_valid _ =
   assert_equal true @@ Sudoku_board.is_valid example_board_4
 
 let test_deserialize_valid_json _ =
-  (* ... (previous code) ... *)
   let json =
     `Assoc
       [
@@ -348,29 +347,30 @@ let test_generate_unsolved : test =
 
   List.init 10 ~f:test_generate_single_unsolved |> test_list
 
+let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
+let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
+let example_hint = Sudoku_game.Suggested_move example_move
 
-  let example_board_1_incomplete = Sudoku_board.set_forced example_board_1 0 0 Empty
-  let example_move = Sudoku_game.{x = 0; y = 0; value = Some 1}
-  let example_hint = Sudoku_game.Suggested_move (example_move)
-
-  let test_hint_forced_moves _ = 
-    assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
-    assert_equal example_hint @@ Sudoku_game.generate_hint example_board_1_incomplete
-    (* let rec check_board_3 n acc = 
-      if n < 0 then acc else 
-      match Sudoku_game.generate_hint example_board_3 with
-        | Sudoku_game.Already_solved -> false
-        | Sudoku_game.Incorrect_cell _ -> false
-        | Sudoku_game.Suggested_move new_move ->
-          match Sudoku_board.get example_board_3_solved new_move.x new_move.y with
-            | None -> false
-            | Some Empty -> false
-            | Some Fixed actual | Some Volatile actual ->
-                let new_val = new_move.value |> Option.value_exn in
-                actual = new_val 
-                |> ( && ) acc
-                |> check_board_3 (n - 1) in
-    assert (check_board_3 1 true) *)
+let test_hint_forced_moves _ =
+  assert_equal Sudoku_game.Already_solved
+  @@ Sudoku_game.generate_hint example_board_1;
+  assert_equal example_hint
+  @@ Sudoku_game.generate_hint example_board_1_incomplete
+(* let rec check_board_3 n acc =
+     if n < 0 then acc else
+     match Sudoku_game.generate_hint example_board_3 with
+       | Sudoku_game.Already_solved -> false
+       | Sudoku_game.Incorrect_cell _ -> false
+       | Sudoku_game.Suggested_move new_move ->
+         match Sudoku_board.get example_board_3_solved new_move.x new_move.y with
+           | None -> false
+           | Some Empty -> false
+           | Some Fixed actual | Some Volatile actual ->
+               let new_val = new_move.value |> Option.value_exn in
+               actual = new_val
+               |> ( && ) acc
+               |> check_board_3 (n - 1) in
+   assert (check_board_3 1 true) *)
 
 let series =
   "Tests"
