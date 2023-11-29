@@ -330,7 +330,7 @@ let number_of_empty (board : Sudoku_board.t) =
 let test_generate_unsolved : test =
   let test_generate_single_unsolved _ : test =
     let board = Sudoku_board.generate_random () in
-    (81 :: List.range 1 20)
+    81 :: List.range 1 20
     |> List.map ~f:(fun to_remove ->
            "test generate_single_unsolved" >:: fun _ ->
            let unsolved = Sudoku_board.generate_degenerate board to_remove in
