@@ -47,14 +47,17 @@ module Make_sudoku_grid (E : Element) = struct
     let map_has_keys_one_through_nine map =
       Map.keys map |> List.equal equal_int (List.range 0 9)
     in
-    if map_has_keys_one_through_nine board |> not then
-      (* check row keys are 0-8 *)
-      false (* if not, return false (invalid board) *)
-    else
-      (* check col keys are 0-8*)
+    (* check row keys are 0-8 *)
+    let check_row_keys = map_has_keys_one_through_nine board in
+
+    (* check col keys are 0-8*)
+    let check_col_keys _ =
       List.range 0 9
       |> List.map ~f:(Map.find_exn board)
       |> List.for_all ~f:map_has_keys_one_through_nine
+    in
+
+    check_row_keys && check_col_keys ()
 
   let get_row (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8 && check_keys board);
