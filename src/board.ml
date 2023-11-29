@@ -158,7 +158,7 @@ module Sudoku_board = struct
     | Some board -> board
 
   let generate_degenerate (board : t) (difficulty : int) : t =
-    assert (is_solved board && difficulty > 0);
+    assert (is_solved board && difficulty > 0 && difficulty <= 81);
 
     let sample_from_list (ls : 'a list) : ('a * 'a list) option =
       let length = List.length ls in
@@ -175,7 +175,7 @@ module Sudoku_board = struct
 
     let rec aux (board : t) (to_remove : int)
         (possible_coordinates : (int * int) list) : t =
-      if to_remove = 0 then board
+      if to_remove <= 0 then board
       else
         match sample_from_list possible_coordinates with
         | None -> board
@@ -183,7 +183,7 @@ module Sudoku_board = struct
             let new_board = set board row col Empty in
             if Option.is_some @@ solve_with_unique_solution new_board then
               aux new_board (to_remove - 1) remaining_coordinates
-            else board (* TODO: aux board to_remove remaining_coordinates *)
+            else aux board to_remove remaining_coordinates
     in
 
     aux board difficulty coordinates

@@ -37,7 +37,7 @@ module Make_sudoku_grid (E : Element) = struct
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
 
-  let grid_size: int = 9
+  let grid_size : int = 9
 
   let equal (b1 : t) (b2 : t) : bool =
     let equal_row = Map.equal equal_element in
@@ -67,11 +67,11 @@ module Make_sudoku_grid (E : Element) = struct
     check_row_keys && check_col_keys ()
 
   let get_row (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
+    assert (0 <= x && x <= 8);
     Map.find_exn board x |> Map.data
 
   let get_col (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
+    assert (0 <= x && x <= 8);
     Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
 
   (* assumes that sub-blocks correspond to ints in the following manner:
@@ -91,7 +91,7 @@ module Make_sudoku_grid (E : Element) = struct
        -------------------------
   *)
   let get_block (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8 && check_keys board);
+    assert (0 <= x && x <= 8);
     let row_lower = x / 3 * 3 in
     let row_upper = row_lower + 2 in
     (* we will use inclusive bounds so plus 2 *)
