@@ -149,8 +149,6 @@ module Sudoku_board = struct
 
         match other_solution with None -> Some solution | _ -> None)
 
-  let solve (_ : t) : t option = None
-
   let generate_random _ : t =
     let seed = Random.int Int.max_value in
     match solve_with_backtracking empty seed is_valid with

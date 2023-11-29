@@ -48,7 +48,7 @@ let () =
         )
 
       | ("solve", None) ->
-        (match Sudoku_board.solve current_board with 
+        (match Sudoku_board.solve_with_backtracking current_board with 
         | Some board ->
           Stdio.print_endline "Solved the Sudoku game!";
           Stdio.print_endline (Sudoku_board.pretty_print board)
