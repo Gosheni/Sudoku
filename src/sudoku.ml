@@ -1,5 +1,6 @@
 open Core
 open Board
+open Game
 
 let save_to_json filename data =
   let json_opt = Sudoku_board.serialize data in
@@ -31,13 +32,29 @@ let () =
 
       match (String.lowercase command_string, command_args) with
       | ("init", None) ->
-        Stdio.print_endline "Initialized a new game!"
+        let full_board = Sudoku_board.generate_random () in
+        let current_board = Sudoku_board.generate_degenerate full_board 54 in (* Default number of elements to be removed from full board: 54 *)
+        Stdio.print_endline "Initialized a new game!";
+        Stdio.print_endline (Sudoku_board.pretty_print current_board)
 
       | ("hint", None) ->
-        Stdio.print_endline "Possible move is 8 at 2, 9"
+        (match Sudoku_game.generate_hint current_board with
+        | Incorrect_cell (row, col) ->
+          Stdio.printf "Incorrect cell at %d, %d\n" row col;
+        | Suggested_move move ->
+          Stdio.printf "Suggested move: Add value %d to row %d col %d\n" (Option.value_exn move.value) move.x move.y;
+        | Already_solved ->
+          Stdio.print_endline "The puzzle is already solved!";
+        )
 
       | ("solve", None) ->
-        Stdio.print_endline "Solved the Sudoku game!"
+        (match Sudoku_board.solve current_board with 
+        | Some board ->
+          Stdio.print_endline "Solved the Sudoku game!";
+          Stdio.print_endline (Sudoku_board.pretty_print board)
+        | None ->
+          Stdio.print_endline "Unsolvable!"
+        )
 
       | "move", Some [a; b; c] ->
         (try
@@ -46,6 +63,7 @@ let () =
           let col = int_of_string c in
           if (1 <= value && value <= 9) && (1 <= row && row <= 9) && (1 <= col && col <= 9) then
             Stdio.printf "Made a move: Add value %d to row %d col %d\n" value row col
+            
           else
             Stdio.print_endline "Invalid arguments for move command: Values out of range (1-9)"
         with
