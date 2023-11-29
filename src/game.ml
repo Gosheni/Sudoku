@@ -35,8 +35,8 @@ module Sudoku_game = struct
     if Sudoku_board.is_solved board then Already_solved else
       let possibile_moves = Hint_system.make_possibility_sets board in
       let forced_moves : (int * int * int) list = Hint_system.get_forced_moves possibile_moves in
-      let _ = List.to_string ~f:(fun (x, y, z) -> ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int z))) forced_moves 
-              |> print_endline in
+      (* let _ = List.to_string ~f:(fun (x, y, z) -> ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int z))) forced_moves 
+              |> print_endline in *)
       if List.length forced_moves = 0 then failwith "Not yet implemented" (* Either need to guess or mistake was made (or preemptive sets) *)
       else
       let x, y, elem = List.nth_exn forced_moves (List.length forced_moves |> Random.int) in

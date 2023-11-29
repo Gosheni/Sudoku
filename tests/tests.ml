@@ -355,8 +355,8 @@ let test_generate_unsolved : test =
 
   let test_hint_forced_moves _ = 
     assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
-    assert_equal example_hint @@ Sudoku_game.generate_hint example_board_1_incomplete
-    (* let rec check_board_3 n acc = 
+    assert_equal example_hint @@ Sudoku_game.generate_hint example_board_1_incomplete;
+    let rec check_board_3 n acc = 
       if n < 0 then acc else 
       match Sudoku_game.generate_hint example_board_3 with
         | Sudoku_game.Already_solved -> false
@@ -370,7 +370,7 @@ let test_generate_unsolved : test =
                 actual = new_val 
                 |> ( && ) acc
                 |> check_board_3 (n - 1) in
-    assert (check_board_3 1 true) *)
+    assert (check_board_3 1 true)
 
 let series =
   "Tests"
