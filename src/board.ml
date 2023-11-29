@@ -1,13 +1,9 @@
-
-
 open Core
 
 module Sudoku_board = struct
-  type _element = Empty | Fixed of int | Volatile of int
-  [@@deriving yojson, equal]
-
   module S_element = struct
-    type element = _element [@@deriving yojson, equal]
+    type element = Empty | Fixed of int | Volatile of int
+    [@@deriving yojson, equal]
 
     let element_is_valid (element : element) : bool =
       match element with

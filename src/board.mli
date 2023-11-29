@@ -13,8 +13,9 @@ end
 
 
 module Sudoku_board : sig
-  type _element = Empty | Fixed of int | Volatile of int
-  module S_element: Grid.Element with type element = _element
+  module S_element: sig
+    type element = Empty | Fixed of int | Volatile of int
+  end 
 
   include Grid.Sudoku_grid with type element = S_element.element
   
