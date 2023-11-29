@@ -1,4 +1,22 @@
 open Core
+open Board
+
+let save_to_json filename data =
+  let json_opt = Sudoku_board.serialize data in
+  match json_opt with
+  | Some json ->
+    Yojson.Safe.to_file filename json;
+    "Current board saved"
+  | None ->
+    "Failed to serialize data"
+
+let load_from_json filename =
+  try
+    match Sudoku_board.deserialize filename with
+    | Some board -> Sudoku_board.pretty_print board
+    | None -> "Board is empty"
+  with
+  | _ -> "Invalid file"
 
 let () =
   Command.basic
@@ -9,6 +27,8 @@ let () =
         anon (maybe (sequence ("arg" %: string)))
       in
     fun () ->
+      let current_board = Sudoku_board.empty in
+
       match (String.lowercase command_string, command_args) with
       | ("init", None) ->
         Stdio.print_endline "Initialized a new game!"
@@ -16,10 +36,6 @@ let () =
         Stdio.print_endline "Possible move is 8 at 2, 9"
       | ("solve", None) ->
         Stdio.print_endline "Solved the Sudoku game!"
-      | ("move" | "save"), None ->
-        Stdio.print_endline "No arguments provided for move or save command"
-      | ("init" | "hint" | "solve"), Some _ ->
-        Stdio.print_endline "Invalid arguments for command"
       | "move", Some [a; b; c] ->
         (try
           let value = int_of_string a in
@@ -30,13 +46,25 @@ let () =
           else
             Stdio.print_endline "Invalid arguments for move command: Values out of range (1-9)"
         with
-        | Failure _ -> Stdio.print_endline "Invalid arguments for move command")
-      | "move", Some _ ->
-        Stdio.print_endline "Invalid arguments for move command"
+        | Failure _ -> Stdio.print_endline "Invalid arguments for move command: Integers expected")
+
       | "save", Some [arg] when String.is_suffix arg ~suffix:".json" ->
-        Stdio.printf "Current board saved to %s\n" arg
-      | "save", Some _ ->
-        Stdio.print_endline "Invalid filename"   
+        Stdio.printf "Saving board to %s:\n" arg;
+        Stdio.print_endline (save_to_json arg current_board)
+
+      | "load", Some [arg] when String.is_suffix arg ~suffix:".json" ->
+        Stdio.printf "Loading board from %s:\n" arg;
+        Stdio.print_endline (load_from_json (Yojson.Safe.from_string arg))
+
+      | ("init" | "hint" | "solve"), Some _ ->
+        Stdio.print_endline "Unexpected arguments provided for init, hint, or solve command"
+
+      | ("move" | "save" | "load"), Some _ ->
+        Stdio.print_endline "Invalid arguments for move, save, or load command"
+
+      | ("move" | "save" | "load"), None ->
+        Stdio.print_endline "No arguments provided for move, save, or load command"
+
       | _ ->
         Stdio.print_endline "Invalid command"   
     ) 

@@ -119,7 +119,7 @@ We implement the game Sudoko including:
 
       Please init a new board to keep playing
 
-    $ ./sudoku.exe init path_to_existing_board.json # user can also create board from existing json
+    $ ./sudoku.exe load path_to_existing_board.json # user can load board from existing json
         1 2 3   4 5 6   7 8 9
        -------------------------
     1 | 3   6 | 5   8 | 4     |
