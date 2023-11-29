@@ -32,10 +32,13 @@ let () =
       match (String.lowercase command_string, command_args) with
       | ("init", None) ->
         Stdio.print_endline "Initialized a new game!"
+
       | ("hint", None) ->
         Stdio.print_endline "Possible move is 8 at 2, 9"
+
       | ("solve", None) ->
         Stdio.print_endline "Solved the Sudoku game!"
+
       | "move", Some [a; b; c] ->
         (try
           let value = int_of_string a in
@@ -54,7 +57,8 @@ let () =
 
       | "load", Some [arg] when String.is_suffix arg ~suffix:".json" ->
         Stdio.printf "Loading board from %s:\n" arg;
-        Stdio.print_endline (load_from_json (Yojson.Safe.from_string arg))
+        let json_txt = In_channel.read_all arg in
+        Stdio.print_endline (load_from_json (Yojson.Safe.from_string json_txt))
 
       | ("init" | "hint" | "solve"), Some _ ->
         Stdio.print_endline "Unexpected arguments provided for init, hint, or solve command"
