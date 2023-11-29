@@ -47,9 +47,14 @@ module Hint_system = struct
     let rec make_possib_board (possibs : t) (row_idx : int) (col_idx : int) : t = 
       if col_idx > 8 then possibs else
       if row_idx > 8 then make_possib_board possibs 0 (col_idx + 1) else
-      let possib_list = check_all_sections row_idx col_idx in
-      let new_possibs = set possibs row_idx col_idx possib_list in
-      make_possib_board new_possibs (row_idx + 1) col_idx
+      match Board.Sudoku_board.get board row_idx col_idx with
+        | Some(Volatile _) | Some(Fixed _) -> 
+            let new_possibs = set possibs row_idx col_idx [] in
+            make_possib_board new_possibs (row_idx + 1) col_idx
+        | Some(Empty) -> 
+            let new_possibs = set possibs row_idx col_idx (check_all_sections row_idx col_idx) in
+            make_possib_board new_possibs (row_idx + 1) col_idx
+        | _ -> assert false
     in
     make_possib_board (empty) 0 0
 
@@ -61,6 +66,7 @@ module Hint_system = struct
         | [] -> acc
         | lst -> 
             (* check if more than one element in the section could possibly be x *)
+            
             let already_present (x : int)  (section : element list): bool = 
               List.count section ~f:(fun ls -> List.mem ls x ~equal:Int.equal) > 1 in
             (* check if possibilities are unique in the given row, col and block *)
