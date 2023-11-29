@@ -183,7 +183,7 @@ module Sudoku_board = struct
             let new_board = set board row col Empty in
             if Option.is_some @@ solve_with_unique_solution new_board then
               aux new_board (to_remove - 1) remaining_coordinates
-            else board
+            else board (* TODO: aux board to_remove remaining_coordinates *)
     in
 
     aux board difficulty coordinates
