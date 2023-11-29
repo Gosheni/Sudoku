@@ -42,13 +42,6 @@ module Sudoku_board : sig
 
   val solve : t -> t option
   (** Solves a sudoku while requiring the solution to be unique *)
-
-  type json = Yojson.Safe.t
-
-  val serialize : t -> json option
-  (** converts a board to json *)
-  val deserialize : json -> t option
-  (** loads a board from json *)
   
   val pretty_print : t -> string
   (** prints out the board in a human readable format, for CLI *)

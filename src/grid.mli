@@ -23,9 +23,6 @@ module type Element = sig
         otherwise None is returned if the board is invalid or an invalid position was given *)
     val set : t -> int -> int -> element -> t
     (** Changes the value at a given coordinate to the given given element. Enforces that the given board is valid. *)
-    val set_forced : t -> int -> int -> element -> t
-    (** Identical to set except set_forced does not enforce is_valid precondition. Used for creating invalid test boards *)
-  
     val get_all : t -> element list 
     val get_row : t -> int -> element list
     (** Returns the row at the given index. Enforces that the given index and board are valid *)
@@ -34,6 +31,15 @@ module type Element = sig
     val get_block : t -> int -> element list
     (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
     val check_keys : t -> bool
+
+    val is_valid_grid: t -> bool
+
+    type json = Yojson.Safe.t
+
+    val serialize : t -> json option
+    (** converts a board to json *)
+    val deserialize : json -> t option
+    (** loads a board from json *)
   end
   
   module Make_sudoku_grid (El: Element): Sudoku_grid with type element = El.element

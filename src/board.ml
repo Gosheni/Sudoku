@@ -20,31 +20,31 @@ module Sudoku_board = struct
   include Grid.Make_sudoku_grid (S_element)
 
   let is_valid ?(updated : (int * int) option) (board : t) : bool =
-    let is_valid_lst (lst : element list) : bool =
-      let seen =
-        List.filter_map lst ~f:(function
-          | Empty -> None
-          | Fixed a | Volatile a -> Some a)
-      in
-      let no_dups = List.contains_dup seen ~compare:compare_int |> not in
-      let no_invalid _ = List.for_all seen ~f:(fun x -> x >= 1 && x <= 9) in
-      no_dups && no_invalid ()
+    let lst_does_not_contain_non_empty_duplicates (lst : element list) =
+      List.filter_map lst ~f:(function
+        | Empty -> None
+        | Fixed a | Volatile a -> Some a)
+      |> List.contains_dup ~compare:compare_int
+      |> not
     in
+
     let check_section (get_section : int -> element list) : bool =
       List.range 0 9
-      |> List.for_all ~f:(fun i -> i |> get_section |> is_valid_lst)
+      |> List.for_all ~f:(fun i ->
+             i |> get_section |> lst_does_not_contain_non_empty_duplicates)
     in
 
     match updated with
     | None ->
-        check_keys board
+        is_valid_grid board
         && (check_section @@ get_row board)
         && (check_section @@ get_col board)
         && (check_section @@ get_block board)
     | Some (x, y) ->
-        get_row board x |> is_valid_lst
-        && get_col board y |> is_valid_lst
-        && get_block board ((3 * (x / 3)) + (y / 3)) |> is_valid_lst
+        get_row board x |> lst_does_not_contain_non_empty_duplicates
+        && get_col board y |> lst_does_not_contain_non_empty_duplicates
+        && get_block board ((3 * (x / 3)) + (y / 3))
+           |> lst_does_not_contain_non_empty_duplicates
 
   let is_solved (board : t) : bool =
     is_valid board
@@ -70,7 +70,7 @@ module Sudoku_board = struct
 
   let solve_with_backtracking (board : t) (seed : int)
       (validator : ?updated:int * int -> t -> bool) : t option =
-    (* Optimizations Only check the validity of the block, row, and column that has been changed. *)
+    (* Optimizations: Is valid for the updates doesn't need to check keys and that all values are in the range 1...9. Perhpas replace set/set_forced with set and set_opt where set_opt runs is_valid ~updated and returns a None is there is any problem. set_opt would be in board.ml/i *)
     let all_empty : (int * int) list =
       Map.to_alist board
       |> List.map ~f:(Tuple2.map_snd ~f:Map.to_alist)
@@ -108,8 +108,7 @@ module Sudoku_board = struct
           match current with
           | Some (Volatile a) ->
               let n = next a in
-              let next_board = set_forced board x y n in
-              (* set_forced due to the incomming board being invalid *)
+              let next_board = set board x y n in
               if equal_element Empty n then
                 backtrack next_board ((x, y) :: empty) tl
               else if validator ~updated:(x, y) next_board then
@@ -186,46 +185,8 @@ module Sudoku_board = struct
               aux new_board (to_remove - 1) remaining_coordinates
             else board
     in
+
     aux board difficulty coordinates
-
-  type json = Yojson.Safe.t
-
-  let serialize (board : t) : json option =
-    let convert_map_content_to_json value_map data =
-      let open Option.Let_syntax in
-      (if Map.is_empty data then None else Some data)
-      >>| Map.to_alist
-      >>| List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
-      >>| fun a -> `Assoc a
-    in
-
-    board
-    |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
-    |> Map.filter_map ~f:Fn.id
-    |> convert_map_content_to_json Fn.id
-
-  let deserialize (obj : json) : t option =
-    let convert_to_map_if_possible obj ~f:filter_map =
-      match obj with
-      | `Assoc assoc ->
-          List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
-      | _ -> Map.empty (module Int)
-    in
-    let yojson_to_row obj =
-      convert_to_map_if_possible obj ~f:(fun (key, value) ->
-          match (int_of_string_opt key, element_of_yojson value) with
-          | Some key_int, Ok element -> Some (key_int, element)
-          | _ -> None)
-    in
-    try
-      let board =
-        convert_to_map_if_possible obj ~f:(fun (key, value) ->
-            match (int_of_string_opt key, yojson_to_row value) with
-            | Some key_int, row -> Some (key_int, row)
-            | _ -> None)
-      in
-      Option.some_if (is_valid board) board
-    with _ -> None
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in
