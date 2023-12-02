@@ -156,28 +156,19 @@ module Sudoku_board = struct
     | Some board -> board
 
   let generate_degenerate (board : t) (difficulty : int) : t =
-    assert (is_solved board && difficulty > 0 && difficulty <= 81);
+    assert (is_solved board && difficulty >= 0 && difficulty <= 81);
 
-    let sample_from_list (ls : 'a list) : ('a * 'a list) option =
-      let length = List.length ls in
-      if length = 0 then None
-      else
-        let n = Random.int length in
-        let element = List.nth_exn ls n in
-        let updated_list = List.filteri ls ~f:(fun i _ -> i <> n) in
-        Some (element, updated_list)
-    in
     let coordinates =
-      List.cartesian_product (List.range 0 9) (List.range 0 9)
+      List.cartesian_product (List.range 0 9) (List.range 0 9) |> List.permute
     in
 
     let rec aux (board : t) (to_remove : int)
         (possible_coordinates : (int * int) list) : t =
       if to_remove <= 0 then board
       else
-        match sample_from_list possible_coordinates with
-        | None -> board
-        | Some ((row, col), remaining_coordinates) ->
+        match possible_coordinates with
+        | [] -> board
+        | (row, col) :: remaining_coordinates ->
             let new_board = set board row col Empty in
             if Option.is_some @@ solve_with_unique_solution new_board then
               aux new_board (to_remove - 1) remaining_coordinates
