@@ -3,12 +3,8 @@ open Board
 open Game.Sudoku_game
 
 let save_to_json filename data =
-  let json_opt = Sudoku_board.serialize data in
-  match json_opt with
-  | Some json ->
-    Yojson.Safe.to_file filename json;
-  | None ->
-    failwith "Failed to serialize data"
+  let json = Sudoku_board.serialize data in
+  Yojson.Safe.to_file filename json
 
 let load_from_json filename =
   try
@@ -27,7 +23,7 @@ let make_move current_board a b c =
     let col = int_of_string c in
     if (1 <= value && value <= 9) && (1 <= row && row <= 9) && (1 <= col && col <= 9) then (
       Stdio.printf "Making a move: Add value %d to row %d col %d\n" value row col;
-      let move = { x = row; y = col; value = Some value } in
+      let move = { x = row-1; y = col-1; value = Some value } in
       match do_move current_board move with 
       | Ok board -> 
         save_to_json "sudoku_game.json" board;
@@ -39,7 +35,7 @@ let make_move current_board a b c =
   with
   | Failure _ -> Stdio.print_endline "Invalid arguments for move command: Integers expected")  
 
-  
+
 let () =
   Command.basic
     ~summary:"sudoku.exe - Generate Sudoku Game from a command line"
