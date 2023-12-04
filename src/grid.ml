@@ -27,7 +27,7 @@ module type Sudoku_grid = sig
 
   type json = Yojson.Safe.t
 
-  val serialize : t -> json option
+  val serialize : t -> json
   val deserialize : json -> t option
 end
 
@@ -57,7 +57,7 @@ module Make_sudoku_grid (E : Element) = struct
     (* check row keys are 0-8 *)
     let check_row_keys = map_has_keys_one_through_nine board in
 
-    (* check col keys are 0-8*)
+    (* check col keys are 0-8. This is lazily evalutated as the find_exn assumes that check_row_keys succeeds *)
     let check_col_keys _ =
       List.range 0 grid_size
       |> List.map ~f:(Map.find_exn board)
@@ -68,10 +68,12 @@ module Make_sudoku_grid (E : Element) = struct
 
   let get_row (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8);
+    (* Assumes the board satisfies `check_keys`*)
     Map.find_exn board x |> Map.data
 
   let get_col (board : t) (x : int) : element list =
     assert (0 <= x && x <= 8);
+    (* Assumes the board satisfies `check_keys`*)
     Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
 
   (* assumes that sub-blocks correspond to ints in the following manner:
@@ -133,26 +135,27 @@ module Make_sudoku_grid (E : Element) = struct
 
   type json = Yojson.Safe.t
 
-  let serialize (board : t) : json option =
+  let serialize (board : t) : json =
+    assert (is_valid_grid board);
     let convert_map_content_to_json value_map data =
-      let open Option.Let_syntax in
-      (if Map.is_empty data then None else Some data)
-      >>| Map.to_alist
-      >>| List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
-      >>| fun a -> `Assoc a
+      data |> Map.to_alist
+      |> List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
+      |> fun a -> `Assoc a
     in
 
     board
     |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
-    |> Map.filter_map ~f:Fn.id
     |> convert_map_content_to_json Fn.id
 
   let deserialize (obj : json) : t option =
-    let convert_to_map_if_possible obj ~f:filter_map =
+    let convert_to_map_if_possible (obj : json) ~f:filter_map =
       match obj with
-      | `Assoc assoc ->
-          List.filter_map assoc ~f:filter_map |> Map.of_alist_exn (module Int)
-      | _ -> Map.empty (module Int)
+      | `Assoc assoc -> (
+          List.filter_map assoc ~f:filter_map |> Map.of_alist (module Int)
+          |> function
+          | `Duplicate_key _ -> None
+          | `Ok a -> Some a)
+      | _ -> None
     in
     let yojson_to_row obj =
       convert_to_map_if_possible obj ~f:(fun (key, value) ->
@@ -160,13 +163,14 @@ module Make_sudoku_grid (E : Element) = struct
           | Some key_int, Ok element -> Some (key_int, element)
           | _ -> None)
     in
-    try
-      let board =
-        convert_to_map_if_possible obj ~f:(fun (key, value) ->
-            match (int_of_string_opt key, yojson_to_row value) with
-            | Some key_int, row -> Some (key_int, row)
-            | _ -> None)
-      in
-      Option.some_if (is_valid_grid board) board
-    with _ -> None
+
+    let board =
+      convert_to_map_if_possible obj ~f:(fun (key, value) ->
+          match (int_of_string_opt key, yojson_to_row value) with
+          | Some key_int, Some row -> Some (key_int, row)
+          | _ -> None)
+    in
+    match board with
+    | Some a -> Option.some_if (is_valid_grid a) a
+    | None -> None
 end
