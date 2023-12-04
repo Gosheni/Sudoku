@@ -146,11 +146,7 @@ module Hint_system = struct
           use_preemptive_sets new_section tl
   
   let update_row (possibs : t) (new_section : element list) (row_idx : int) : t = 
-    (* let _ = print_endline ("updating row " ^ (Int.to_string row_idx)) in
-    let _ = print_endline ("old section: " ^ (List.to_string ~f:S_element.element_to_string (get_row possibs row_idx))) in
-    let _ = print_endline ("new section: " ^ (List.to_string ~f:S_element.element_to_string new_section)) in *)
     let rec update_helper section idx acc = 
-      (* let _ = print_endline ("section: " ^ (List.to_string ~f:S_element.element_to_string section)) in *)
       if idx > 8 then acc else
       match section with 
         | [] -> failwith "not enough elements given to update row"
