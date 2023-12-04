@@ -8,5 +8,7 @@ module Hint_system : sig
 
     val make_possibility_sets : Board.Sudoku_board.t -> t
 
-    val get_forced_moves : t -> (int * int * int) list
+    val get_forced_moves : t -> (int * int * int * string) list
+
+    val crooks : t -> t
 end

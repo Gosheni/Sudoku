@@ -58,7 +58,10 @@ module Hint_system = struct
     in
     make_possib_board (empty) 0 0
 
-  let get_forced_moves (possib : t) : (int * int * int) list =
+  let union l1 l2 = 
+    List.fold l2 ~init:l1 ~f:(fun acc x -> if List.mem acc x ~equal:Int.equal then acc else x::acc)
+
+  let get_forced_moves (possib : t) : (int * int * int * string) list =
     assert ((is_valid possib));
     Map.fold possib ~init:[] ~f:(fun ~key:row_idx ~data:row acc ->
       Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
@@ -77,16 +80,122 @@ module Hint_system = struct
             let block_idx = (row_idx / 3) * 3 + (col_idx / 3) in
             let unique_in_block = List.filter lst 
                             ~f:(fun x -> already_present x (get_block possib block_idx) |> not) in
-            let all_unique = unique_in_row @ unique_in_col @ unique_in_block 
-                             |> List.fold ~init:[] ~f:(fun acc x -> if List.mem acc x ~equal:Int.equal 
-                                                                    then acc else x::acc) 
-                                (* fold keeps only unique elements, since two sections could tell us same info *)
+            let all_unique = unique_in_row
+                            |> union unique_in_col
+                            |> union unique_in_block 
+                            (* keeps only unique elements, since two sections could tell us same info *)
             in
             if List.length all_unique = 1 then 
-              ((row_idx, col_idx, List.hd_exn all_unique)::acc)
+              let forced_elem = List.hd_exn all_unique in
+              let forced_by = 
+                if List.mem unique_in_row forced_elem ~equal:Int.equal then "row"
+                else if List.mem unique_in_col forced_elem ~equal:Int.equal then "col"
+                else "block" in (* TODO: handle case where forced by multiple sections *)
+              ((row_idx, col_idx, forced_elem, forced_by)::acc)
             else if List.length all_unique > 1 then (* multiple unique elements in same cell which is impossible *)
-              (row_idx, col_idx, -1)::acc (* -1 means an error exists in the current block, which is still a kind of hint*)
+              (row_idx, col_idx, -1, "error")::acc (* -1 means an error exists in the current block, which is still a kind of hint*)
             else acc
         )
     )
+
+  type preemptive = {
+    possibs : element;
+    members : int list;
+  }
+
+  let find_preemptive_sets (section : element list) : preemptive list = 
+    assert (List.length section = 9);
+    let preemptive_condition num_cells ls = 
+      List.length ls = num_cells in
+    let rec get_combination_indices (size : int) (lst : int list) : int list list = 
+      if size = 0 then [[]] else  
+      match lst with 
+          | [] -> []
+          | hd::tl ->
+              List.map ~f:(fun x -> hd::x) (get_combination_indices (size - 1) tl)
+              @ get_combination_indices size tl
+              (* either keep curr element and decrease size_limit or keep going *)
+    in
+    let check_preemptive_of_size (size : int) =
+      List.init 9 ~f:(Fn.id)
+      |> List.filter ~f:(fun x -> (List.nth_exn section x |> List.length) > 1) (* only non-empty, non-forced cells*)
+      |> get_combination_indices size
+      |> List.filter_map ~f:(fun idxs ->
+                              let elem_set = List.map idxs ~f:(fun idx -> List.nth_exn section idx)
+                              |> List.fold ~init:[] ~f:(fun acc x -> union acc x) in (* check union of selected cells *)
+                              if preemptive_condition size elem_set then (* check preemptive condition *)
+                                Some {possibs = elem_set; members = idxs}
+                              else None) in
+    let rec loop_sizes min max acc = 
+      if min > max then acc else
+      loop_sizes (min + 1) max (acc @ (check_preemptive_of_size min)) in
+    loop_sizes 2 9 []
+    (* only check certain sizes of preemptive conditions to save time *)
+
+  let rec use_preemptive_sets (section : element list) (preSet : preemptive list) = 
+    match preSet with
+      | [] -> section
+      | curr::tl ->
+          let idxs = curr.members in
+          let elems = curr.possibs in
+          let new_section = 
+          List.mapi section ~f:(fun idx elem -> 
+            if List.mem idxs idx ~equal:Int.equal then elem else (* don't care if current item is in preSet *)
+            List.filter elem ~f:(fun x -> (List.mem elems x ~equal:Int.equal) |> not) (* remove all elements in preSet from current cell *)
+          ) in
+          use_preemptive_sets new_section tl
+  
+  let update_row (possibs : t) (new_section : element list) (row_idx : int) : t = 
+    (* let _ = print_endline ("updating row " ^ (Int.to_string row_idx)) in
+    let _ = print_endline ("old section: " ^ (List.to_string ~f:S_element.element_to_string (get_row possibs row_idx))) in
+    let _ = print_endline ("new section: " ^ (List.to_string ~f:S_element.element_to_string new_section)) in *)
+    let rec update_helper section idx acc = 
+      (* let _ = print_endline ("section: " ^ (List.to_string ~f:S_element.element_to_string section)) in *)
+      if idx > 8 then acc else
+      match section with 
+        | [] -> failwith "not enough elements given to update row"
+        | hd::tl -> 
+            let new_possibs = set acc row_idx idx hd in
+            update_helper tl (idx + 1) new_possibs in
+    update_helper new_section 0 possibs
+
+  let update_col (possibs : t) (new_section : element list) (col_idx : int) : t = 
+    let rec update_helper section idx acc = 
+      if idx > 8 then acc else
+      match section with 
+        | [] -> failwith "not enough elements given to update col"
+        | hd::tl -> 
+            let new_possibs = set acc idx col_idx hd in
+            update_helper tl (idx + 1) new_possibs in
+    update_helper new_section 0 possibs
+  
+  let update_block (possibs : t) (new_section : element list) (block_idx : int) : t = 
+    let rec update_helper section idx acc = 
+      if idx > 8 then acc else
+      match section with 
+        | [] -> failwith "not enough elements given to update block"
+        | hd::tl -> 
+            let row_idx = (block_idx / 3) * 3 + (idx / 3) in
+            let col_idx = (block_idx mod 3) * 3 + (idx mod 3) in
+            let new_possibs = set acc row_idx col_idx hd in
+            update_helper tl (idx + 1) new_possibs in
+    update_helper new_section 0 possibs
+
+  let crooks_on_section (possibs : t) (get_section : int -> element list) 
+                        (update_section : t -> element list -> int -> t): t = 
+    let rec crooks_helper (idx : int) acc = 
+      if idx > 8 then acc else
+      let section = get_section idx in
+      let preSet = find_preemptive_sets section in
+      let new_section = use_preemptive_sets section preSet in
+      let new_possibs = update_section acc new_section idx in
+      crooks_helper (idx + 1) new_possibs
+    in
+    crooks_helper 0 possibs
+
+  let crooks (possibs : t) : t = 
+    crooks_on_section possibs (get_row possibs) update_row
+    |> (fun x -> crooks_on_section x (get_col possibs) update_col)
+    |> (fun x -> crooks_on_section x (get_block possibs) update_block)
+
   end

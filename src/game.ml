@@ -10,7 +10,8 @@ module Sudoku_game = struct
 
   type hint =
     | Incorrect_cell of (int * int)
-    | Suggested_move of move
+    | Suggest_guess
+    | Suggested_move of (move * string)
     | Already_solved
 
   let do_move (board : Sudoku_board.t) (move : move) :
@@ -31,17 +32,31 @@ module Sudoku_game = struct
         let new_board = set board move.x move.y @@ Volatile move_value in
         if is_valid new_board then Ok new_board else Error Invalid_position
 
-  let generate_hint (board : Sudoku_board.t) : hint =
+  let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
     if Sudoku_board.is_solved board then Already_solved else
       let possibile_moves = Hint_system.make_possibility_sets board in
-      let forced_moves : (int * int * int) list = Hint_system.get_forced_moves possibile_moves in
-      (* let _ = List.to_string ~f:(fun (x, y, z) -> ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int z))) forced_moves 
-              |> print_endline in *)
-      if List.length forced_moves = 0 then failwith "Not yet implemented" (* Either need to guess or mistake was made (or preemptive sets) *)
+      let forced_moves : (int * int * int * string) list = Hint_system.get_forced_moves possibile_moves in
+      let _ = List.to_string ~f:(fun (x, y, z, s) -> ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int z) ^ " desc: " ^ s)) forced_moves 
+              |> print_endline in
+      if List.length forced_moves = 0 then
+        match use_crooks with
+        | None | Some false -> Suggest_guess
+        | Some true -> 
+        let updated_possibs = Hint_system.crooks possibile_moves in
+        let new_forced_moves = Hint_system.get_forced_moves updated_possibs in
+        let _ = print_endline "running crooks" in 
+        let _ = List.to_string ~f:(fun (x, y, z, s) -> ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int z) ^ " desc: " ^ s)) new_forced_moves 
+              |> print_endline in
+        if List.length new_forced_moves = 0 then Suggest_guess (* if still no forced moves after using crooks suggest guess *)
+        else
+          let x, y, elem, desc = List.nth_exn new_forced_moves (List.length new_forced_moves |> Random.int) in
+          let _ = print_endline ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int elem)) in
+          let next_move : move = {x=x; y=y; value=Some elem} in
+          Suggested_move (next_move, desc)
       else
-      let x, y, elem = List.nth_exn forced_moves (List.length forced_moves |> Random.int) in
+      let x, y, elem, desc = List.nth_exn forced_moves (List.length forced_moves |> Random.int) in
       (* let _ = print_endline ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int elem)) in *)
       let next_move : move = {x=x; y=y; value=Some elem} in
-      Suggested_move next_move
+      Suggested_move (next_move, desc)
 
 end

@@ -349,29 +349,52 @@ let test_generate_unsolved : test =
 
 let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
 let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
-let example_hint = Sudoku_game.Suggested_move example_move
+let example_hint = Sudoku_game.Suggested_move (example_move, "row")
+
+let make_test_hint ?(use_crooks : bool option) board : test =
+  let solved = Sudoku_board.solve_with_backtracking board 0 Sudoku_board.is_valid in
+  List.init 10 ~f:(fun _ ->
+      "test hint once" >:: fun _ ->
+      match solved with 
+      | None -> assert_failure ""
+      | Some solved ->
+        match Sudoku_game.generate_hint ?use_crooks:use_crooks board with 
+          | Sudoku_game.Suggested_move (new_move, _) ->
+              (match Sudoku_board.get solved new_move.x new_move.y with
+                | None -> assert_failure ""
+                | Some Empty -> assert_failure ""
+                | Some Fixed actual | Some Volatile actual ->
+                    let new_val = new_move.value |> Option.value_exn in
+                    assert_equal actual @@ new_val)
+          | _ -> assert_failure "")
+  |> test_list
 
 let test_hint_forced_moves _ =
-  assert_equal Sudoku_game.Already_solved
-  @@ Sudoku_game.generate_hint example_board_1;
-  assert_equal example_hint
-  @@ Sudoku_game.generate_hint example_board_1_incomplete
+  assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
+  assert_equal example_hint @@ Sudoku_game.generate_hint example_board_1_incomplete
+  
+let test_board_3 = make_test_hint example_board_3
 
-(* let rec check_board_3 n acc =
-     if n < 0 then acc else
-     match Sudoku_game.generate_hint example_board_3 with
-       | Sudoku_game.Already_solved -> false
-       | Sudoku_game.Incorrect_cell _ -> false
-       | Sudoku_game.Suggested_move new_move ->
-         match Sudoku_board.get example_board_3_solved new_move.x new_move.y with
-           | None -> false
-           | Some Empty -> false
-           | Some Fixed actual | Some Volatile actual ->
-               let new_val = new_move.value |> Option.value_exn in
-               actual = new_val
-               |> ( && ) acc
-               |> check_board_3 (n - 1) in
-   assert (check_board_3 1 true) *)
+  let example_board_5_ints = 
+    [
+      [ 0; 3; 9; 5; 0; 0; 0; 0; 0; ];
+      [ 0; 0; 1; 8; 0; 9; 0; 7; 0; ];
+      [ 0; 0; 0; 0; 1; 0; 9; 0; 4; ];
+      [ 1; 0; 0; 4; 0; 0; 0; 0; 3; ];
+      [ 0; 0; 0; 0; 0; 0; 0; 0; 7; ];
+      [ 0; 0; 7; 0; 0; 0; 8; 6; 0; ];
+      [ 0; 0; 6; 7; 0; 8; 2; 0; 0; ];
+      [ 0; 1; 0; 0; 9; 0; 0; 0; 5; ];
+      [ 0; 0; 0; 0; 0; 1; 0; 0; 8; ]; 
+    ]
+  
+  let example_board_5 = create_board example_board_5_ints
+
+  let test_crooks_for_forced _ = 
+    assert_equal Sudoku_game.Suggest_guess @@ Sudoku_game.generate_hint example_board_5
+  
+  let test_crooks = make_test_hint ?use_crooks:(Some true) example_board_5
+
 let series =
   "Tests"
   >::: [
@@ -385,6 +408,9 @@ let series =
          test_generate_solved;
          test_generate_unsolved;
          "test hint forced moves" >:: test_hint_forced_moves;
+         test_board_3;
+          "test crooks no forced" >:: test_crooks_for_forced;
+         test_crooks;
        ]
 
 let () = run_test_tt_main series
