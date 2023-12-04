@@ -49,11 +49,19 @@ module Sudoku_game = struct
         else
           let x, y, elem, desc = List.nth_exn new_forced_moves (List.length new_forced_moves |> Random.int) in
           let next_move : move = {x=x; y=y; value=Some elem} in
-          Suggested_move (next_move, desc)
+          let original_moves = Hint_system.get possibile_moves x y |> Option.value_exn in 
+          let after_removal = Hint_system.get updated_possibs x y |> Option.value_exn in 
+          let removed = List.filter original_moves ~f:(fun x -> not (List.mem after_removal x ~equal:Int.equal)) in
+          let full_desc = (List.to_string removed ~f:(fun x -> string_of_int x)) ^ 
+                          " can't appear in this cell because they were required in other cells."^
+                          "Therefore, this cell must be " ^ (string_of_int elem) ^ 
+                          " because if we exclude the others, it is now the only possible appearence in its " ^ desc in
+          Suggested_move (next_move, full_desc)
       else
       let x, y, elem, desc = List.nth_exn forced_moves (List.length forced_moves |> Random.int) in
       (* let _ = print_endline ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int elem)) in *)
       let next_move : move = {x=x; y=y; value=Some elem} in
-      Suggested_move (next_move, desc)
+      let full_desc = "This cell must be " ^ (string_of_int elem) ^ " because it is the only possible appearence in its " ^ desc in
+      Suggested_move (next_move, full_desc)
 
 end
