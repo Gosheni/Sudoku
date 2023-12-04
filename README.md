@@ -33,7 +33,7 @@ We implement the game Sudoko including:
 4. **Include a mock of a use of your application, along the lines of the Minesweeper example above but showing the complete protocol.**
 
     ``` sh
-    $ ./sudoku.exe --command init  # initialize a new game
+    $ ./sudoku.exe --command init # initialize a new game (sudoku_game.json)
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |

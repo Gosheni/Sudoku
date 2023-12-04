@@ -9,7 +9,7 @@ module Sudoku_game : sig
   type move = { x : int; y : int; value : int option }
 
   type hint =
-    | Incorrect_cell of (int * int)
+    | Incorrect_cell
     | Suggest_guess
     | Suggested_move of (move * string)
     | Already_solved  (** The kinds of hints allowed *)
