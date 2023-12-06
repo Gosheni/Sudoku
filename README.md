@@ -49,7 +49,7 @@ We implement the game Sudoko including:
    9 | 2     |       | 4     |
       -------------------------
 
-    $ ./sudoku.exe --command move 8 9 2  # example move, add value 2 to row 8 col 9
+    $ ./sudoku.exe --command move 2 8 9  # example move, add value 2 to row 8 col 9
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |
@@ -80,6 +80,40 @@ We implement the game Sudoko including:
       -------------------------
    7 |     1 | 2   5 |     3 |
    8 |   6   |   7   |   8 2 |
+   9 | 2     |       | 4     |
+      -------------------------
+
+   $ ./sudoku.exe --command remove 8 9  # example remove, remove previously placed value at row 8 col 9
+        1 2 3   4 5 6   7 8 9
+      -------------------------
+   1 |     6 |       |     1 |
+   2 |   7   |   6   |   5   |
+   3 | 8     | 1   3 | 2     |
+      -------------------------
+   4 |     5 |   4   | 8     |
+   5 |   4   | 7   2 |   9   |
+   6 |     8 |   1   | 7     |
+      -------------------------
+   7 |     1 | 2   5 |     3 |
+   8 |   6   |   7   |   8   |
+   9 | 2     |       | 4     |
+      -------------------------
+
+   $ ./sudoku.exe --command remove 1 3  # example invalid remove
+
+   Cannot remove at row 1 column 3 because it is one of the original values
+        1 2 3   4 5 6   7 8 9
+      -------------------------
+   1 |     6 |       |     1 |
+   2 |   7   |   6   |   5   |
+   3 | 8     | 1   3 | 2     |
+      -------------------------
+   4 |     5 |   4   | 8     |
+   5 |   4   | 7   2 |   9   |
+   6 |     8 |   1   | 7     |
+      -------------------------
+   7 |     1 | 2   5 |     3 |
+   8 |   6   |   7   |   8   |
    9 | 2     |       | 4     |
       -------------------------
 
