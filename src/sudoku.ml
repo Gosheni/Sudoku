@@ -31,9 +31,7 @@ let get_current_board_exn _ = get_board_exn "sudoku_game.json"
 
 let () =
   Command.basic ~summary:"sudoku.exe - Generate Sudoku Game from a command line"
-    (let%map_open.Command command_string =
-       flag "--command" (required string)
-         ~doc:"Command (init, hint, solve, save, move)"
+    (let%map_open.Command command_string = anon ("COMMAND" %: string)
      and command_args = anon (maybe (sequence ("arg" %: string))) in
      fun () ->
        match (String.lowercase command_string, command_args) with
@@ -53,7 +51,7 @@ let () =
            | Suggested_move (move, desc) ->
                Stdio.printf "Suggested move: Add value %d to row %d col %d\n"
                  (Option.value_exn move.value)
-                 move.x move.y;
+                 (move.x + 1) (move.y + 1);
                Stdio.print_endline desc
            | Already_solved ->
                Stdio.print_endline "The puzzle is already solved!");
