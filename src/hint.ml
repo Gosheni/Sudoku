@@ -67,7 +67,7 @@ module Hint_system = struct
       Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
         match elem with
         | [] -> acc
-        | [single_move] -> (row_idx, col_idx, single_move, "forced")::acc
+        | [single_move] -> (row_idx, col_idx, single_move, "singleton")::acc
         | lst -> 
             (* check if more than one element in the section could possibly be x *)
             
@@ -130,8 +130,8 @@ module Hint_system = struct
     let rec loop_sizes min max acc = 
       if min > max then acc else
       loop_sizes (min + 1) max (acc @ (check_preemptive_of_size min)) in
-    loop_sizes 2 9 []
-    (* only check certain sizes of preemptive conditions to save time *)
+    loop_sizes 2 8 []
+    (* only check certain sizes of preemptive sets to save time, for now checking all of them *)
 
   let rec use_preemptive_sets (section : element list) (preSet : preemptive list) = 
     match preSet with
@@ -193,8 +193,8 @@ module Hint_system = struct
   let crooks (possibs : t) : t = 
     let crooks_one_round curr = 
       crooks_on_section curr (get_row curr) update_row
-      |> (fun x -> crooks_on_section x (get_col x) update_col)
-      |> (fun x -> crooks_on_section x (get_block x) update_block) in
+      |> (fun curr -> crooks_on_section curr (get_col curr) update_col)
+      |> (fun curr -> crooks_on_section curr (get_block curr) update_block) in
     let rec crooks_till_unchanged curr = 
       let new_possibs = crooks_one_round curr in
       if equal curr new_possibs then curr else crooks_till_unchanged new_possibs in

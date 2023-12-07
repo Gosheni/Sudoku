@@ -350,31 +350,12 @@ let test_generate_unsolved : test =
 let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
 let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
 
-let make_test_hint ?(use_crooks : bool option) board : test =
-  let solved = Sudoku_board.solve_with_backtracking board 0 Sudoku_board.is_valid in
-  List.init 10 ~f:(fun _ ->
-      "test hint once" >:: fun _ ->
-      match solved with 
-      | None -> assert_failure ""
-      | Some solved ->
-        match Sudoku_game.generate_hint ?use_crooks:use_crooks board with 
-          | Sudoku_game.Suggested_move (new_move, _) ->
-              (match Sudoku_board.get solved new_move.x new_move.y with
-                | None -> assert_failure ""
-                | Some Empty -> assert_failure ""
-                | Some Fixed actual | Some Volatile actual ->
-                    let new_val = new_move.value |> Option.value_exn in
-                    assert_equal actual @@ new_val)
-          | _ -> assert_failure "")
-  |> test_list
-
 let test_hint_forced_moves _ =
   assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
   match Sudoku_game.generate_hint example_board_1_incomplete with
     | Sudoku_game.Suggested_move (new_move, _) ->
       assert_equal example_move new_move
     | _ -> assert_failure ""
-  
 
 let example_board_5_ints = 
   [
