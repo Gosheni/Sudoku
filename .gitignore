@@ -3,3 +3,4 @@
 _build/
 _coverage/
 *.coverage
+sudoku_game.json
