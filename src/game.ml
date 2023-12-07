@@ -42,6 +42,8 @@ module Sudoku_game = struct
         | Some true -> 
         let updated_possibs = Hint_system.crooks possibile_moves in
         let new_forced_moves = Hint_system.get_forced_moves updated_possibs in
+        (* let _ = print_endline ("new forced moves: " ^ (List.to_string new_forced_moves ~f:(fun (x, y, elem, _) -> 
+          "(" ^ (string_of_int x) ^ ", " ^ (string_of_int y) ^ ", " ^ (string_of_int elem) ^ ")"))) in *)
         if List.length new_forced_moves = 0 then 
           match Sudoku_board.solve_with_unique_solution board with
             | None -> Incorrect_cell
