@@ -24,11 +24,18 @@
  (modules game)
  (libraries core yojson board hint)
  (preprocess
+  (pps ppx_jane ppx_deriving_yojson)))
+
+(library
+ (name iolib)
+ (modules iolib)
+ (libraries core yojson core_unix board)
+ (preprocess
   (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
 (executable
  (name sudoku)
  (modules sudoku)
- (libraries grid board core game yojson core_unix.command_unix)
+ (libraries grid board core game yojson iolib core_unix.command_unix)
  (preprocess
   (pps ppx_jane)))

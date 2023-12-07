@@ -94,7 +94,7 @@ module Sudoku_board = struct
       |> List.to_array
     in
     let next (a : int) : element =
-      match order_array.(a - 1) with None -> Empty | Some a -> Volatile a
+      match order_array.(a - 1) with None -> Empty | Some a -> Fixed a
     in
 
     let rec backtrack (board : t) (empty : (int * int) list)
@@ -106,7 +106,7 @@ module Sudoku_board = struct
       | (x, y) :: tl -> (
           let current = get board x y in
           match current with
-          | Some (Volatile a) ->
+          | Some (Fixed a) ->
               let n = next a in
               let next_board = set board x y n in
               if equal_element Empty n then
@@ -122,7 +122,7 @@ module Sudoku_board = struct
       match empty with
       | [] -> Some board
       | (x, y) :: tl -> (
-          let new_board = set board x y @@ Volatile first_guess in
+          let new_board = set board x y @@ Fixed first_guess in
           if validator ~updated:(x, y) new_board then
             aux new_board tl ((x, y) :: added_to)
           else

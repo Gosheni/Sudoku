@@ -36,7 +36,7 @@ module type Element = sig
 
     type json = Yojson.Safe.t
 
-    val serialize : t -> json option
+    val serialize : t -> json
     (** converts a board to json *)
     val deserialize : json -> t option
     (** loads a board from json *)
