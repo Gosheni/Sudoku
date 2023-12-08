@@ -67,6 +67,7 @@ module Hint_system = struct
       Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
         match elem with
         | [] -> acc
+        | [single_move] -> (row_idx, col_idx, single_move, "singleton")::acc
         | lst -> 
             (* check if more than one element in the section could possibly be x *)
             
@@ -129,8 +130,8 @@ module Hint_system = struct
     let rec loop_sizes min max acc = 
       if min > max then acc else
       loop_sizes (min + 1) max (acc @ (check_preemptive_of_size min)) in
-    loop_sizes 2 9 []
-    (* only check certain sizes of preemptive conditions to save time *)
+    loop_sizes 2 8 []
+    (* only check certain sizes of preemptive sets to save time, for now checking all of them *)
 
   let rec use_preemptive_sets (section : element list) (preSet : preemptive list) = 
     match preSet with
@@ -149,7 +150,7 @@ module Hint_system = struct
     let rec update_helper section idx acc = 
       if idx > 8 then acc else
       match section with 
-        | [] -> failwith "not enough elements given to update row"
+        | [] -> assert false
         | hd::tl -> 
             let new_possibs = set acc row_idx idx hd in
             update_helper tl (idx + 1) new_possibs in
@@ -159,7 +160,7 @@ module Hint_system = struct
     let rec update_helper section idx acc = 
       if idx > 8 then acc else
       match section with 
-        | [] -> failwith "not enough elements given to update col"
+        | [] -> assert false
         | hd::tl -> 
             let new_possibs = set acc idx col_idx hd in
             update_helper tl (idx + 1) new_possibs in
@@ -169,14 +170,14 @@ module Hint_system = struct
     let rec update_helper section idx acc = 
       if idx > 8 then acc else
       match section with 
-        | [] -> failwith "not enough elements given to update block"
+        | [] -> assert false
         | hd::tl -> 
             let row_idx = (block_idx / 3) * 3 + (idx / 3) in
             let col_idx = (block_idx mod 3) * 3 + (idx mod 3) in
             let new_possibs = set acc row_idx col_idx hd in
             update_helper tl (idx + 1) new_possibs in
     update_helper new_section 0 possibs
-
+  
   let crooks_on_section (possibs : t) (get_section : int -> element list) 
                         (update_section : t -> element list -> int -> t): t = 
     let rec crooks_helper (idx : int) acc = 
@@ -190,8 +191,12 @@ module Hint_system = struct
     crooks_helper 0 possibs
 
   let crooks (possibs : t) : t = 
-    crooks_on_section possibs (get_row possibs) update_row
-    |> (fun x -> crooks_on_section x (get_col possibs) update_col)
-    |> (fun x -> crooks_on_section x (get_block possibs) update_block)
-
+    let crooks_one_round curr = 
+      crooks_on_section curr (get_row curr) update_row
+      |> (fun curr -> crooks_on_section curr (get_col curr) update_col)
+      |> (fun curr -> crooks_on_section curr (get_block curr) update_block) in
+    let rec crooks_till_unchanged curr = 
+      let new_possibs = crooks_one_round curr in
+      if equal curr new_possibs then curr else crooks_till_unchanged new_possibs in
+    crooks_till_unchanged possibs
   end

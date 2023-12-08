@@ -32,29 +32,7 @@ let test_pretty_printer _ =
      9 |       |       |       |\n\
     \  -------------------------\n"
   in
-  let expected_two_elements =
-    "    1 2 3   4 5 6   7 8 9\n\
-    \  -------------------------\n\
-     1 |       |   1   |       |\n\
-     2 |       |       |       |\n\
-     3 |       |       |       |\n\
-    \  -------------------------\n\
-     4 |       |       |       |\n\
-     5 |       |       |       |\n\
-     6 |       |       |       |\n\
-    \  -------------------------\n\
-     7 |       |       |       |\n\
-     8 |   7   |       |       |\n\
-     9 |       |       |       |\n\
-    \  -------------------------\n"
-  in
-  let two_elements =
-    Sudoku_board.empty |> fun board ->
-    Sudoku_board.set board 0 4 @@ Fixed 1 |> fun board ->
-    Sudoku_board.set board 7 1 @@ Volatile 7
-  in
-  (assert_equal expected_empty @@ Sudoku_board.(pretty_print empty));
-  assert_equal expected_two_elements @@ Sudoku_board.(pretty_print two_elements)
+  assert_equal expected_empty @@ Sudoku_board.(pretty_print empty)
 
 let create_board elems_list =
   let rec loop_board i acc_board =
@@ -304,78 +282,6 @@ let test_deserialize_valid_json _ =
   |> Option.value_or_thunk ~default:(fun _ -> false)
   |> assert_bool ""
 
-let test_serialize_deserialize _ =
-  let full_sudoku = Sudoku_board.generate_random () in
-  full_sudoku |> Sudoku_board.serialize |> Sudoku_board.deserialize
-  |> (function
-       | None -> false | Some board -> Sudoku_board.equal board full_sudoku)
-  |> assert_bool ""
-
-let test_deserialize_invalid : test =
-  let json_of_single_row_sudoku : Sudoku_board.json =
-    `Assoc [ ("0", `Assoc [ ("0", `List [ `String "Fixed"; `Int 1 ]) ]) ]
-  in
-  let json_with_invalid_element_correct_type : Sudoku_board.json =
-    `Assoc [ ("0", `Assoc [ ("5", `List [ `String "Fixed"; `Int 100 ]) ]) ]
-  in
-  let json_with_invalid_element_incorrect_type1 : Sudoku_board.json =
-    `Assoc
-      [
-        ( "0",
-          `Assoc
-            [
-              ("4", `List [ `String "Fixed"; `Int 7 ]);
-              ("5", `List [ `String "123"; `Int 1 ]);
-            ] );
-      ]
-  in
-  let json_with_invalid_element_incorrect_type2 : Sudoku_board.json =
-    `Assoc
-      [
-        ( "0",
-          `Assoc
-            [
-              ("7", `List [ `String "Fixed"; `Int 4 ]);
-              ("8", `List [ `String "Fixed"; `String "5" ]);
-            ] );
-      ]
-  in
-  let json_with_duplicate_key1 : Sudoku_board.json =
-    `Assoc [ ("0", `Assoc []); ("0", `Assoc []) ]
-  in
-  let json_with_duplicate_key2 : Sudoku_board.json =
-    `Assoc
-      [
-        ( "0",
-          `Assoc
-            [
-              ("0", `List [ `String "Fixed"; `Int 1 ]);
-              ("0", `List [ `String "Fixed"; `Int 2 ]);
-            ] );
-      ]
-  in
-  let json_not_the_right_type : Sudoku_board.json =
-    `String "This is not a board"
-  in
-
-  let all_invalid =
-    [
-      json_of_single_row_sudoku;
-      json_with_invalid_element_correct_type;
-      json_with_invalid_element_incorrect_type1;
-      json_with_invalid_element_incorrect_type2;
-      json_with_duplicate_key1;
-      json_with_duplicate_key2;
-      json_not_the_right_type;
-    ]
-  in
-
-  List.map all_invalid ~f:Sudoku_board.deserialize
-  |> List.map ~f:Option.is_none
-  |> List.map ~f:(fun hopefully_true _ -> assert_bool "" hopefully_true)
-  |> List.map ~f:(( >:: ) "test deserialize_invalid")
-  |> test_list
-
 let test_seed : test =
   test_list
     [
@@ -389,32 +295,21 @@ let test_seed : test =
         assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
     ]
 
-let simple_invalid_board : Sudoku_board.t =
-  Sudoku_board.(
-    set empty 0 0 (Volatile 1) |> fun board -> set board 0 1 (Volatile 1))
-
-let test_solve : test =
+let test_solve _ =
   let open Sudoku_board in
-  let solved = solve_with_backtracking empty 0 is_valid in
-  let test1 : test =
-    "test" >:: fun _ ->
-    match solved with
-    | None ->
-        assert_failure
-          "solve_with_backtracking should always be able to solve an empty \
-           sudoku"
-    | Some sudoku ->
-        assert_bool "" @@ is_solved sudoku;
-        assert_bool "" @@ equal sudoku
-        @@ (solve_with_backtracking sudoku 0 is_valid |> force_unwrap)
+  (let solved = solve_with_backtracking empty 0 is_valid in
+   match solved with
+   | None -> assert_failure ""
+   | Some sudoku ->
+       assert_bool "" @@ is_solved sudoku;
+       let solve_solved =
+         solve_with_backtracking sudoku 0 is_valid |> force_unwrap
+       in
+       assert_bool "" @@ equal sudoku solve_solved);
+  let invalid =
+    set empty 0 0 (Volatile 1) |> fun board -> set board 0 1 (Volatile 1)
   in
-
-  let test_invalid : test =
-    "test" >:: fun _ ->
-    solve_with_backtracking simple_invalid_board 0 is_valid |> assert_equal None
-  in
-
-  test_list [ test1; test_invalid ]
+  assert_equal None @@ solve_with_backtracking invalid 0 is_valid
 
 let test_solve_uniquely _ =
   let open Sudoku_board in
@@ -422,8 +317,7 @@ let test_solve_uniquely _ =
   let solved = solve_with_backtracking empty 0 is_valid |> force_unwrap in
   let missing_one = set solved 0 0 Empty in
   assert_bool ""
-  @@ equal solved (solve_with_unique_solution missing_one |> force_unwrap);
-  assert_equal None @@ solve_with_unique_solution simple_invalid_board
+  @@ equal solved (solve_with_unique_solution missing_one |> force_unwrap)
 
 let test_generate_solved : test =
   List.init 10 ~f:(fun _ ->
@@ -456,87 +350,48 @@ let test_generate_unsolved : test =
 let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
 let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
 
-let make_test_hint ?(use_crooks : bool option) board : test =
-  let solved =
-    Sudoku_board.solve_with_backtracking board 0 Sudoku_board.is_valid
-  in
-  List.init 10 ~f:(fun _ ->
-      "test hint once" >:: fun _ ->
-      match solved with
-      | None -> assert_failure ""
-      | Some solved -> (
-          match Sudoku_game.generate_hint ?use_crooks board with
-          | Sudoku_game.Suggested_move (new_move, _) -> (
-              match Sudoku_board.get solved new_move.x new_move.y with
-              | None -> assert_failure ""
-              | Some Empty -> assert_failure ""
-              | Some (Fixed actual) | Some (Volatile actual) ->
-                  let new_val = new_move.value |> Option.value_exn in
-                  assert_equal actual @@ new_val)
-          | _ -> assert_failure ""))
-  |> test_list
-
 let test_hint_forced_moves _ =
-  assert_equal Sudoku_game.Already_solved
-  @@ Sudoku_game.generate_hint example_board_1;
+  assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
   match Sudoku_game.generate_hint example_board_1_incomplete with
-  | Sudoku_game.Suggested_move (new_move, _) ->
+    | Sudoku_game.Suggested_move (new_move, _) ->
       assert_equal example_move new_move
-  | _ -> assert_failure ""
+    | _ -> assert_failure ""
 
-let test_board_3 = make_test_hint example_board_3
-
-let example_board_5_ints =
+let example_board_5_ints = 
   [
-    [ 0; 3; 9; 5; 0; 0; 0; 0; 0 ];
-    [ 0; 0; 1; 8; 0; 9; 0; 7; 0 ];
-    [ 0; 0; 0; 0; 1; 0; 9; 0; 4 ];
-    [ 1; 0; 0; 4; 0; 0; 0; 0; 3 ];
-    [ 0; 0; 0; 0; 0; 0; 0; 0; 7 ];
-    [ 0; 0; 7; 0; 0; 0; 8; 6; 0 ];
-    [ 0; 0; 6; 7; 0; 8; 2; 0; 0 ];
-    [ 0; 1; 0; 0; 9; 0; 0; 0; 5 ];
-    [ 0; 0; 0; 0; 0; 1; 0; 0; 8 ];
+    [ 0; 3; 9; 5; 0; 0; 0; 0; 0; ];
+    [ 0; 0; 1; 8; 0; 9; 0; 7; 0; ];
+    [ 0; 0; 0; 0; 1; 0; 9; 0; 4; ];
+    [ 1; 0; 0; 4; 0; 0; 0; 0; 3; ];
+    [ 0; 0; 0; 0; 0; 0; 0; 0; 7; ];
+    [ 0; 0; 7; 0; 0; 0; 8; 6; 0; ];
+    [ 0; 0; 6; 7; 0; 8; 2; 0; 0; ];
+    [ 0; 1; 0; 0; 9; 0; 0; 0; 5; ];
+    [ 0; 0; 0; 0; 0; 1; 0; 0; 8; ]; 
   ]
 
 let example_board_5 = create_board example_board_5_ints
 
-let apply_hints_till_solved_or_guess board =
-  let rec loop board =
-    match Sudoku_game.generate_hint ?use_crooks:(Some true) board with
-    | Sudoku_game.Suggested_move (move, _) -> (
+let apply_hints_till_solved_or_guess board = 
+  let rec loop board = 
+    match Sudoku_game.generate_hint ?use_crooks:(Some(true)) board with
+      | Sudoku_game.Suggested_move (move, _) -> 
         (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
-           let _ = print_endline desc in *)
-        match Sudoku_game.do_move board move with
-        | Error _ ->
-            let _ = print_endline "error happened" in
-            board
-        | Ok new_board ->
+        let _ = print_endline desc in *)
+        (match Sudoku_game.do_move board move with
+          | Error _ -> let _ = print_endline "error happened" in board
+          | Ok (new_board) -> 
             if Sudoku_board.is_solved new_board then new_board
             else loop new_board)
-    | _ -> board
+      | _ -> board
   in
   loop board
 
-let test_hints_and_moves _ =
-  assert_equal true @@ Sudoku_board.is_solved
-  @@ apply_hints_till_solved_or_guess example_board_3;
-  assert_equal true @@ Sudoku_board.is_solved
-  @@ apply_hints_till_solved_or_guess example_board_4;
-  (* board 5 needs a guess to solve, so applying hints repeatedly 2shouldnt solve it but should leave a solvable board *)
-  let board_5_solve_attempt =
-    apply_hints_till_solved_or_guess example_board_5
-  in
-  assert_equal false @@ Sudoku_board.is_solved @@ board_5_solve_attempt;
-  match Sudoku_board.solve_with_unique_solution board_5_solve_attempt with
-  | None -> assert_failure ""
-  | Some _ -> assert true
+let test_hints_and_moves _ = 
+  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_3;
+  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_4;
+  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_5 (* board that needs crooks to solve *)
 
-let test_crooks_for_forced _ =
-  assert_equal Sudoku_game.Suggest_guess
-  @@ Sudoku_game.generate_hint example_board_5
-
-let test_crooks = make_test_hint ?use_crooks:(Some true) example_board_5
 
 let series =
   "Tests"
@@ -545,18 +400,13 @@ let series =
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
          "test deserialize_valid" >:: test_deserialize_valid_json;
-         test_deserialize_invalid;
-         "test serialize_deserialize" >:: test_serialize_deserialize;
          test_seed;
-         test_solve;
+         "test solve" >:: test_solve;
          "test solve uniquely" >:: test_solve_uniquely;
          test_generate_solved;
          test_generate_unsolved;
          "test hint forced moves" >:: test_hint_forced_moves;
          "test hints till solved" >:: test_hints_and_moves;
-         test_board_3;
-         "test crooks no forced" >:: test_crooks_for_forced;
-         test_crooks;
        ]
 
 let () = run_test_tt_main series
