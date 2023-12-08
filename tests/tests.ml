@@ -32,7 +32,30 @@ let test_pretty_printer _ =
      9 |       |       |       |\n\
     \  -------------------------\n"
   in
-  assert_equal expected_empty @@ Sudoku_board.(pretty_print empty)
+
+  let expected_two_elements =
+    "    1 2 3   4 5 6   7 8 9\n\
+    \  -------------------------\n\
+     1 |       |   1   |       |\n\
+     2 |       |       |       |\n\
+     3 |       |       |       |\n\
+    \  -------------------------\n\
+     4 |       |       |       |\n\
+     5 |       |       |       |\n\
+     6 |       |       |       |\n\
+    \  -------------------------\n\
+     7 |       |       |       |\n\
+     8 |   7   |       |       |\n\
+     9 |       |       |       |\n\
+    \  -------------------------\n"
+  in
+  let two_elements =
+    Sudoku_board.empty |> fun board ->
+    Sudoku_board.set board 0 4 @@ Fixed 1 |> fun board ->
+    Sudoku_board.set board 7 1 @@ Volatile 7
+  in
+  (assert_equal expected_empty @@ Sudoku_board.(pretty_print empty));
+  assert_equal expected_two_elements @@ Sudoku_board.(pretty_print two_elements)
 
 let create_board elems_list =
   let rec loop_board i acc_board =
@@ -282,6 +305,78 @@ let test_deserialize_valid_json _ =
   |> Option.value_or_thunk ~default:(fun _ -> false)
   |> assert_bool ""
 
+let test_serialize_deserialize _ =
+  let full_sudoku = Sudoku_board.generate_random () in
+  full_sudoku |> Sudoku_board.serialize |> Sudoku_board.deserialize
+  |> (function
+       | None -> false | Some board -> Sudoku_board.equal board full_sudoku)
+  |> assert_bool ""
+
+let test_deserialize_invalid : test =
+  let json_of_single_row_sudoku : Sudoku_board.json =
+    `Assoc [ ("0", `Assoc [ ("0", `List [ `String "Fixed"; `Int 1 ]) ]) ]
+  in
+  let json_with_invalid_element_correct_type : Sudoku_board.json =
+    `Assoc [ ("0", `Assoc [ ("5", `List [ `String "Fixed"; `Int 100 ]) ]) ]
+  in
+  let json_with_invalid_element_incorrect_type1 : Sudoku_board.json =
+    `Assoc
+      [
+        ( "0",
+          `Assoc
+            [
+              ("4", `List [ `String "Fixed"; `Int 7 ]);
+              ("5", `List [ `String "123"; `Int 1 ]);
+            ] );
+      ]
+  in
+  let json_with_invalid_element_incorrect_type2 : Sudoku_board.json =
+    `Assoc
+      [
+        ( "0",
+          `Assoc
+            [
+              ("7", `List [ `String "Fixed"; `Int 4 ]);
+              ("8", `List [ `String "Fixed"; `String "5" ]);
+            ] );
+      ]
+  in
+  let json_with_duplicate_key1 : Sudoku_board.json =
+    `Assoc [ ("0", `Assoc []); ("0", `Assoc []) ]
+  in
+  let json_with_duplicate_key2 : Sudoku_board.json =
+    `Assoc
+      [
+        ( "0",
+          `Assoc
+            [
+              ("0", `List [ `String "Fixed"; `Int 1 ]);
+              ("0", `List [ `String "Fixed"; `Int 2 ]);
+            ] );
+      ]
+  in
+  let json_not_the_right_type : Sudoku_board.json =
+    `String "This is not a board"
+  in
+
+  let all_invalid =
+    [
+      json_of_single_row_sudoku;
+      json_with_invalid_element_correct_type;
+      json_with_invalid_element_incorrect_type1;
+      json_with_invalid_element_incorrect_type2;
+      json_with_duplicate_key1;
+      json_with_duplicate_key2;
+      json_not_the_right_type;
+    ]
+  in
+
+  List.map all_invalid ~f:Sudoku_board.deserialize
+  |> List.map ~f:Option.is_none
+  |> List.map ~f:(fun hopefully_true _ -> assert_bool "" hopefully_true)
+  |> List.map ~f:(( >:: ) "test deserialize_invalid")
+  |> test_list
+
 let test_seed : test =
   test_list
     [
@@ -295,21 +390,31 @@ let test_seed : test =
         assert_equal (Sudoku_board.seed_to_list 0) (List.range 1 10) );
     ]
 
-let test_solve _ =
+let simple_invalid_board : Sudoku_board.t =
+  Sudoku_board.(
+    set empty 0 0 (Volatile 1) |> fun board -> set board 0 1 (Volatile 1))
+
+let test_solve : test =
   let open Sudoku_board in
-  (let solved = solve_with_backtracking empty 0 is_valid in
-   match solved with
-   | None -> assert_failure ""
-   | Some sudoku ->
-       assert_bool "" @@ is_solved sudoku;
-       let solve_solved =
-         solve_with_backtracking sudoku 0 is_valid |> force_unwrap
-       in
-       assert_bool "" @@ equal sudoku solve_solved);
-  let invalid =
-    set empty 0 0 (Volatile 1) |> fun board -> set board 0 1 (Volatile 1)
+  let solved = solve_with_backtracking empty 0 is_valid in
+  let test1 : test =
+    "test" >:: fun _ ->
+    match solved with
+    | None ->
+        assert_failure
+          "solve_with_backtracking should always be able to solve an empty \
+           sudoku"
+    | Some sudoku ->
+        assert_bool "" @@ is_solved sudoku;
+        assert_bool "" @@ equal sudoku
+        @@ (solve_with_backtracking sudoku 0 is_valid |> force_unwrap)
   in
-  assert_equal None @@ solve_with_backtracking invalid 0 is_valid
+  let test_invalid : test =
+    "test" >:: fun _ ->
+    solve_with_backtracking simple_invalid_board 0 is_valid |> assert_equal None
+  in
+
+  test_list [ test1; test_invalid ]
 
 let test_solve_uniquely _ =
   let open Sudoku_board in
@@ -406,8 +511,10 @@ let series =
          "test is_solved" >:: test_is_solved;
          "test is_valid" >:: test_is_valid;
          "test deserialize_valid" >:: test_deserialize_valid_json;
+         test_deserialize_invalid;
+         "test serialize_deserialize" >:: test_serialize_deserialize;
          test_seed;
-         "test solve" >:: test_solve;
+         test_solve;
          "test solve uniquely" >:: test_solve_uniquely;
          test_generate_solved;
          test_generate_unsolved;
