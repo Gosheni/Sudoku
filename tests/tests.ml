@@ -351,47 +351,53 @@ let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
 let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
 
 let test_hint_forced_moves _ =
-  assert_equal Sudoku_game.Already_solved @@ Sudoku_game.generate_hint example_board_1;
+  assert_equal Sudoku_game.Already_solved
+  @@ Sudoku_game.generate_hint example_board_1;
   match Sudoku_game.generate_hint example_board_1_incomplete with
-    | Sudoku_game.Suggested_move (new_move, _) ->
+  | Sudoku_game.Suggested_move (new_move, _) ->
       assert_equal example_move new_move
-    | _ -> assert_failure ""
+  | _ -> assert_failure ""
 
-let example_board_5_ints = 
+let example_board_5_ints =
   [
-    [ 0; 3; 9; 5; 0; 0; 0; 0; 0; ];
-    [ 0; 0; 1; 8; 0; 9; 0; 7; 0; ];
-    [ 0; 0; 0; 0; 1; 0; 9; 0; 4; ];
-    [ 1; 0; 0; 4; 0; 0; 0; 0; 3; ];
-    [ 0; 0; 0; 0; 0; 0; 0; 0; 7; ];
-    [ 0; 0; 7; 0; 0; 0; 8; 6; 0; ];
-    [ 0; 0; 6; 7; 0; 8; 2; 0; 0; ];
-    [ 0; 1; 0; 0; 9; 0; 0; 0; 5; ];
-    [ 0; 0; 0; 0; 0; 1; 0; 0; 8; ]; 
+    [ 0; 3; 9; 5; 0; 0; 0; 0; 0 ];
+    [ 0; 0; 1; 8; 0; 9; 0; 7; 0 ];
+    [ 0; 0; 0; 0; 1; 0; 9; 0; 4 ];
+    [ 1; 0; 0; 4; 0; 0; 0; 0; 3 ];
+    [ 0; 0; 0; 0; 0; 0; 0; 0; 7 ];
+    [ 0; 0; 7; 0; 0; 0; 8; 6; 0 ];
+    [ 0; 0; 6; 7; 0; 8; 2; 0; 0 ];
+    [ 0; 1; 0; 0; 9; 0; 0; 0; 5 ];
+    [ 0; 0; 0; 0; 0; 1; 0; 0; 8 ];
   ]
 
 let example_board_5 = create_board example_board_5_ints
 
-let apply_hints_till_solved_or_guess board = 
-  let rec loop board = 
-    match Sudoku_game.generate_hint ?use_crooks:(Some(true)) board with
-      | Sudoku_game.Suggested_move (move, _) -> 
+let apply_hints_till_solved_or_guess board =
+  let rec loop board =
+    match Sudoku_game.generate_hint ?use_crooks:(Some true) board with
+    | Sudoku_game.Suggested_move (move, _) -> (
         (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
-        let _ = print_endline desc in *)
-        (match Sudoku_game.do_move board move with
-          | Error _ -> let _ = print_endline "error happened" in board
-          | Ok (new_board) -> 
+           let _ = print_endline desc in *)
+        match Sudoku_game.do_move board move with
+        | Error _ ->
+            let _ = print_endline "error happened" in
+            board
+        | Ok new_board ->
             if Sudoku_board.is_solved new_board then new_board
             else loop new_board)
-      | _ -> board
+    | _ -> board
   in
   loop board
 
-let test_hints_and_moves _ = 
-  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_3;
-  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_4;
-  assert_equal true @@ Sudoku_board.is_solved @@ apply_hints_till_solved_or_guess example_board_5 (* board that needs crooks to solve *)
-
+let test_hints_and_moves _ =
+  assert_equal true @@ Sudoku_board.is_solved
+  @@ apply_hints_till_solved_or_guess example_board_3;
+  assert_equal true @@ Sudoku_board.is_solved
+  @@ apply_hints_till_solved_or_guess example_board_4;
+  assert_equal true @@ Sudoku_board.is_solved
+  @@ apply_hints_till_solved_or_guess
+       example_board_5 (* board that needs crooks to solve *)
 
 let series =
   "Tests"
