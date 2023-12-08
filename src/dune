@@ -17,7 +17,7 @@
  (modules hint)
  (libraries core yojson grid board)
  (preprocess
-  (pps ppx_jane ppx_deriving_yojson)))
+  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
 (library
  (name game)
