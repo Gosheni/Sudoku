@@ -1,4 +1,3 @@
-open Core
 open Board
 
 let save_board_to_json filename data =
@@ -8,6 +7,7 @@ let load_board_from_json filename : Sudoku_board.t option =
   try Yojson.Safe.from_file filename |> Sudoku_board.deserialize
   with _ -> None
 
+(*
 module Configuration = struct
   type highscore = { title : string; difficulty : int; total_time : float }
   [@@deriving equal, yojson]
@@ -59,3 +59,4 @@ module Configuration = struct
         save_config { highscores = new_highscores_list; games = new_games_list };
         Ok ()
 end
+*)
