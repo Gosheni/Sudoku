@@ -80,9 +80,8 @@ let () =
        | "remove", Some [ a; b ] -> (
            let current_board = get_current_board_exn () in
            try
-             let open Option.Let_syntax in
-             let%bind row = int_of_string_opt a in
-             let%bind col = int_of_string_opt b in
+             let row = int_of_string a in
+             let col = int_of_string b in
 
              if (1 <= row && row <= 9) && 1 <= col && col <= 9 then (
                Stdio.printf "Removing a value from row %d col %d\n" row col;
