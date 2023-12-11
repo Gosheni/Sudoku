@@ -104,19 +104,22 @@ let render _ =
           for (var row = 0; row < 9; row++) {
             for (var col = 0; col < 9; col++) {
               let cell = document.getElementById(row.toString() + col.toString());
-              console.log(currentBoard[row][col]);
+              let element = currentBoard[row][col];
+              
               if (cell.classList.contains('bold')) {
                 cell.classList.remove('bold');
               }
               
-              if (currentBoard[row][col][0] === "Empty") {
+              if (element[0] === "Empty") {
                 hasSeenEmpty = true;
                 cell.textContent = "";  
-              } else if (currentBoard[row][col][0] === "Fixed") {
-                  cell.classList.add('bold')
-                  cell.textContent = currentBoard[row][col][1]
+              } else if (element[0] === "Fixed") {
+                  cell.textContent = element[1];
+              } else if (element[0] === "Volatile") {
+                  cell.classList.add('bold');
+                  cell.textContent = element[1];
               } else {
-                  cell.textContent = currentBoard[row][col][1]
+                  console.log("Received unknown sudoku cell");
               }
             }
           }
