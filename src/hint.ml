@@ -242,4 +242,20 @@ module Hint_system = struct
       if equal curr new_possibs then curr else crooks_till_unchanged new_possibs
     in
     crooks_till_unchanged possibs
+
+  (* best guess is just shortest length of possibilities *)
+  let get_best_guess (possib : t) : int * int =
+    let best_row, best_col, _ =
+      (* initial length is just set to 10, which is guaranteed to be larger than any list of possibilities *)
+      Map.fold possib ~init:(-1, -1, 10) ~f:(fun ~key:row_idx ~data:row acc ->
+          Map.fold row ~init:acc
+            ~f:(fun ~key:col_idx ~data:elem (i, j, best_len) ->
+              match elem with
+              | [] -> (i, j, best_len)
+              | lst ->
+                  if List.length lst < best_len then
+                    (row_idx, col_idx, List.length lst)
+                  else (i, j, best_len)))
+    in
+    (best_row, best_col)
 end

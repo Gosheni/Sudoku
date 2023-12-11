@@ -21,4 +21,7 @@ module Hint_system : sig
   (** Apply crook's algorithm (see https://www.ams.org/notices/200904/rtx090400460p.pdf) to eliminate
         more possibilities from the markup. This lets us run forced_moves again and get more information 
         from the board without guessing *)
+  
+  val get_best_guess : t -> (int * int)
+  (** Take a markup and return the coordinates of the cell with the fewest possible entries *)
 end
