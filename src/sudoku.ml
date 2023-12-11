@@ -12,7 +12,11 @@ let make_move current_board (v : int option) r c =
   | Ok board ->
       save_board_to_json default_game_file board;
       Stdio.print_endline (Sudoku_board.pretty_print board)
-  | Error _ -> Stdio.print_endline "Error\n"
+  | Error e ->
+      match e with 
+        | Invalid_position -> Stdio.printf "Invalid position given\n"
+        | Fixed_cell -> Stdio.printf "Cannot change a fixed cell\n"
+        | Already_present -> Stdio.printf "Value already present in cell\n"
 
 let get_board_exn (filename : string) =
   match load_board_from_json filename with
@@ -37,9 +41,11 @@ let () =
        | "hint", None ->
            let current_board = get_current_board_exn () in
            (match generate_hint current_board with
-           | Incorrect_cell -> Stdio.printf "Incorrect cell somewhere\n"
-           | Suggest_guess ->
-               Stdio.printf "No suggested move. Try to guess first\n"
+           | Incorrect_cell -> Stdio.printf "Puzzle no longer has a unique solution. There is an incorrect cell somewhere\n"
+           | Suggest_guess (move, desc) ->
+               Stdio.printf "No suggested move is present. Try to guess at row %d col %d\n"
+                  (move.x + 1) (move.y + 1);
+               Stdio.print_endline desc
            | Suggested_move (move, desc) ->
                Stdio.printf "Suggested move: Add value %d to row %d col %d\n"
                  (Option.value_exn move.value)

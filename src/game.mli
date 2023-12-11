@@ -10,8 +10,8 @@ module Sudoku_game : sig
 
   type hint =
     | Incorrect_cell
-    | Suggest_guess
-    | Suggested_move of (move * string)
+    | Suggest_guess of (move * string) (* string passed is a description explaining the hint to the user *)
+    | Suggested_move of (move * string) (* string passed is a description explaining the hint to the user *)
     | Already_solved  (** The kinds of hints allowed *)
 
   val do_move :

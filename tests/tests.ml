@@ -8,7 +8,7 @@ open Board
 
 (* open Hint *)
 open Game
-(*open Grid*)
+(* open Grid *)
 
 let force_unwrap (optional : 'a option) : 'a =
   match optional with
@@ -161,6 +161,70 @@ let example_board_ints_4 =
   ]
 
 let example_board_4 = create_board example_board_ints_4
+
+(* needs crooks to generate hints *)
+let example_board_5_ints =
+  [
+    [ 0; 3; 9; 5; 0; 0; 0; 0; 0 ];
+    [ 0; 0; 1; 8; 0; 9; 0; 7; 0 ];
+    [ 0; 0; 0; 0; 1; 0; 9; 0; 4 ];
+    [ 1; 0; 0; 4; 0; 0; 0; 0; 3 ];
+    [ 0; 0; 0; 0; 0; 0; 0; 0; 7 ];
+    [ 0; 0; 7; 0; 0; 0; 8; 6; 0 ];
+    [ 0; 0; 6; 7; 0; 8; 2; 0; 0 ];
+    [ 0; 1; 0; 0; 9; 0; 0; 0; 5 ];
+    [ 0; 0; 0; 0; 0; 1; 0; 0; 8 ];
+  ]
+
+let example_board_5 = create_board example_board_5_ints
+
+(* unsolvable *)
+let example_board_6_ints =
+  [
+    [ 7; 8; 1; 5; 4; 3; 9; 2; 6 ];
+    [ 0; 0; 6; 1; 7; 9; 5; 0; 0 ];
+    [ 9; 5; 4; 6; 2; 8; 7; 3; 1 ];
+    [ 6; 9; 5; 8; 3; 7; 2; 1; 4 ];
+    [ 1; 4; 8; 2; 6; 5; 3; 7; 9 ];
+    [ 3; 2; 7; 9; 1; 4; 8; 0; 0 ];
+    [ 4; 1; 3; 7; 5; 2; 6; 9; 8 ];
+    [ 0; 0; 2; 0; 0; 0; 4; 0; 0 ];
+    [ 5; 7; 9; 4; 8; 6; 1; 0; 3 ];
+  ]
+
+let example_board_6 = create_board example_board_6_ints
+
+(* multiple solutions *)
+let example_board_7_ints =
+  [
+    [ 0; 8; 0; 0; 0; 9; 7; 4; 3 ];
+    [ 0; 5; 0; 0; 0; 8; 0; 1; 0 ];
+    [ 0; 1; 0; 0; 0; 0; 0; 0; 0 ];
+    [ 8; 0; 0; 0; 0; 5; 0; 0; 0 ];
+    [ 0; 0; 0; 8; 0; 4; 0; 0; 0 ];
+    [ 0; 0; 0; 3; 0; 0; 0; 0; 6 ];
+    [ 0; 0; 0; 0; 0; 0; 0; 7; 0 ];
+    [ 0; 3; 0; 5; 0; 0; 0; 8; 0 ];
+    [ 9; 7; 2; 4; 0; 0; 0; 5; 0 ];
+  ]
+
+let example_board_7 = create_board example_board_7_ints
+
+(* should need guessing to solve *)
+let example_board_8_ints =
+  [
+    [ 0; 9; 0; 7; 0; 0; 8; 6; 0 ];
+    [ 0; 3; 1; 0; 0; 5; 0; 2; 0 ];
+    [ 8; 0; 6; 0; 0; 0; 0; 0; 0 ];
+    [ 0; 0; 7; 0; 5; 0; 0; 0; 6 ];
+    [ 0; 0; 0; 3; 0; 7; 0; 0; 0 ];
+    [ 5; 0; 0; 0; 1; 0; 7; 0; 0 ];
+    [ 0; 0; 0; 0; 0; 0; 1; 0; 9 ];
+    [ 0; 2; 0; 6; 0; 0; 3; 5; 0 ];
+    [ 0; 5; 4; 0; 0; 8; 0; 7; 0 ];
+  ]
+
+let example_board_8 = create_board example_board_8_ints
 
 let test_is_solved _ =
   assert_equal true @@ Sudoku_board.is_solved example_board_1;
@@ -463,24 +527,14 @@ let test_hint_forced_moves _ =
       assert_equal example_move new_move
   | _ -> assert_failure ""
 
-let example_board_5_ints =
-  [
-    [ 0; 3; 9; 5; 0; 0; 0; 0; 0 ];
-    [ 0; 0; 1; 8; 0; 9; 0; 7; 0 ];
-    [ 0; 0; 0; 0; 1; 0; 9; 0; 4 ];
-    [ 1; 0; 0; 4; 0; 0; 0; 0; 3 ];
-    [ 0; 0; 0; 0; 0; 0; 0; 0; 7 ];
-    [ 0; 0; 7; 0; 0; 0; 8; 6; 0 ];
-    [ 0; 0; 6; 7; 0; 8; 2; 0; 0 ];
-    [ 0; 1; 0; 0; 9; 0; 0; 0; 5 ];
-    [ 0; 0; 0; 0; 0; 1; 0; 0; 8 ];
-  ]
-
-let example_board_5 = create_board example_board_5_ints
+let test_bad_boards _ = 
+  assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_6; (* unsolvable *)
+  assert_equal (Sudoku_game.Incorrect_cell) @@ Sudoku_game.generate_hint example_board_6; (* unsolvable *)
+  assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_7 (* multiple solutions *)
 
 let apply_hints_till_solved_or_guess board =
   let rec loop board =
-    match Sudoku_game.generate_hint ?use_crooks:(Some true) board with
+    match Sudoku_game.generate_hint ~use_crooks:true board with
     | Sudoku_game.Suggested_move (move, _) -> (
         (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
            let _ = print_endline desc in *)
@@ -495,6 +549,42 @@ let apply_hints_till_solved_or_guess board =
   in
   loop board
 
+let apply_hints_without_crooks board =
+  let rec loop board =
+    match Sudoku_game.generate_hint ~use_crooks:false board with
+    | Sudoku_game.Suggested_move (move, _) -> (
+        (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
+            let _ = print_endline desc in *)
+        match Sudoku_game.do_move board move with
+        | Error _ ->
+            let _ = print_endline "error happened" in
+            board
+        | Ok new_board ->
+            if Sudoku_board.is_solved new_board then new_board
+            else loop new_board)
+    | _ -> board
+  in
+  loop board
+
+(* this test finds that approximately 1/5 randomly generated boards need crooks to solve *)
+let test_is_crooks_needed : test =
+  List.init 10 ~f:(fun _ ->
+      "test generate_solved" >:: fun _ ->
+      let solved = Sudoku_board.generate_random () in
+      let degen = Sudoku_board.generate_degenerate solved 54 in
+      let hints_applied = apply_hints_without_crooks degen in
+      if Sudoku_board.is_solved hints_applied then assert_bool "" true
+      else
+        (* tests that crooks can come up with moves after non-crooks fails *)
+        let hint = Sudoku_game.generate_hint ~use_crooks:true hints_applied in
+        match hint with
+        | Suggest_guess _ -> assert_bool "" true
+        | Already_solved -> assert_bool "" false
+        | Suggested_move _ -> assert_bool "" true
+        | _ -> assert_bool "" false)
+  (* applying hints should never make a mistake *)
+  |> test_list
+
 let test_hints_and_moves _ =
   assert_equal true @@ Sudoku_board.is_solved
   @@ apply_hints_till_solved_or_guess example_board_3;
@@ -503,6 +593,18 @@ let test_hints_and_moves _ =
   assert_equal true @@ Sudoku_board.is_solved
   @@ apply_hints_till_solved_or_guess
        example_board_5 (* board that needs crooks to solve *)
+
+let test_io _ = 
+  let filename = "test_board_io.json" in
+  let _ = Iolib.save_board_to_json filename example_board_5 in
+  assert_bool "" @@ Sudoku_board.equal example_board_5 (Iolib.load_board_from_json filename |> force_unwrap)
+
+let test_guess _ = 
+  let almost_solved = apply_hints_till_solved_or_guess example_board_8 in
+  let hint = Sudoku_game.generate_hint ~use_crooks:true almost_solved in
+  match hint with
+    | Suggest_guess _ -> assert_bool "" true
+    | _ -> assert_bool "" false
 
 let series =
   "Tests"
@@ -520,6 +622,10 @@ let series =
          test_generate_unsolved;
          "test hint forced moves" >:: test_hint_forced_moves;
          "test hints till solved" >:: test_hints_and_moves;
+         "test bad boards" >:: test_bad_boards; 
+         test_is_crooks_needed;
+         "test io" >:: test_io;
+         "test guess needed" >:: test_guess;
        ]
 
 let () = run_test_tt_main series
