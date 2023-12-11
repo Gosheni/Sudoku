@@ -28,6 +28,18 @@ let render _ =
           border-collapse: collapse;
         }
         table { table-layout: fixed; }
+        .sudoku-table tr:nth-of-type(3n) td {
+            border-bottom: 3px solid #f00;
+        }       
+        .sudoku-table tr:nth-of-type(3n - 2) td {
+          border-top: 3px solid #f00;
+      }       
+        .sudoku-table tr td:nth-of-type(3n) {
+            border-right: 3px solid #f00;
+        }
+        .sudoku-table tr td:nth-of-type(3n-2) {
+            border-left: 3px solid #f00;
+        }       
         td {
            height: 10vh;
            width: 10vh;
@@ -112,7 +124,7 @@ let render _ =
         </script>
     </head>
     <body>
-        <table>
+        <table class="sudoku-table">
           <%s! 
           List.range 0 9
           |> List.map ~f: string_of_int 
@@ -122,12 +134,12 @@ let render _ =
         <br/>
         <table>
           <tr> 
-          <%s! number_button "X" %>
           <%s! 
             List.range 1 10 
             |> List.map ~f: string_of_int 
             |> List.map ~f: number_button 
             |> List.fold ~init: "" ~f: (^) %>
+          <%s! number_button "X" %>
           </tr>
         </table>
     </body>
