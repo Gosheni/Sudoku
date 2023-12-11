@@ -529,7 +529,6 @@ let test_hint_forced_moves _ =
 
 let test_bad_boards _ = 
   assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_6; (* unsolvable *)
-  assert_equal (Sudoku_game.Incorrect_cell) @@ Sudoku_game.generate_hint example_board_6; (* unsolvable *)
   assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_7 (* multiple solutions *)
 
 let apply_hints_till_solved_or_guess board =

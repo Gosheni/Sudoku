@@ -40,7 +40,7 @@ let () =
            Stdio.print_endline (Sudoku_board.pretty_print current_board)
        | "hint", None ->
            let current_board = get_current_board_exn () in
-           (match generate_hint current_board with
+           (match generate_hint ~use_crooks:true current_board with
            | Incorrect_cell -> Stdio.printf "Puzzle no longer has a unique solution. There is an incorrect cell somewhere\n"
            | Suggest_guess (move, desc) ->
                Stdio.printf "No suggested move is present. Try to guess at row %d col %d\n"
