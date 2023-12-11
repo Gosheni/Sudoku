@@ -4,9 +4,7 @@ open Iolib
 open Game
 
 let single_cell id = 
-    <td class="cell" id="<%s id %>" onclick="changeSelectedCell(this)">
-    <!--<input type="number" id="name" pattern="\d?" minlength="0" maxlength="1" width="80%" />-->
-    </td>
+    <td class="cell" id="<%s id %>" onclick="changeSelectedCell(this)"/>
 
 let number_button number =
   <td class="numberButton" id="numberButton<%s number %>" onclick="numberButtonWasTapped(this)"><%s (number)%></td>
@@ -23,35 +21,38 @@ let render _ =
   <html>
     <head>
         <style>
+        body {
+          font-family: Arial, sans-serif;
+        }
         table, th, td {
           border: 1px solid black;
           border-collapse: collapse;
+          font-size: 50px;
         }
         table { table-layout: fixed; }
         .sudoku-table tr:nth-of-type(3n) td {
-            border-bottom: 3px solid #f00;
+            border-bottom: 5px solid #f00;
         }       
         .sudoku-table tr:nth-of-type(3n - 2) td {
-          border-top: 3px solid #f00;
+          border-top: 5px solid #f00;
       }       
         .sudoku-table tr td:nth-of-type(3n) {
-            border-right: 3px solid #f00;
+            border-right: 5px solid #f00;
         }
         .sudoku-table tr td:nth-of-type(3n-2) {
-            border-left: 3px solid #f00;
+            border-left: 5px solid #f00;
         }       
         td {
-           height: 10vh;
-           width: 10vh;
+           height: 9vh;
+           width: 9vh;
            text-align: center;
         }
         .selected {
            background-color: brown;
           color: #FFF;
         }
-        .selected {
-          background-color: brown;
-          color: #DDD;
+        .bold {
+          font-weight: 600;
         }
         </style>
         <script>
@@ -121,10 +122,9 @@ let render _ =
           }
           if (!hasSeenEmpty) {
             console.log("You have won");
-          setTimeout(function() {
-            alert("You have won!!");
-          }, 500);
-            
+            setTimeout(function() {
+              alert("You have won!!");
+            }, 500);
           }
 
         }
