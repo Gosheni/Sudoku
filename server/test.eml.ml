@@ -56,40 +56,50 @@ let render _ =
         </style>
         <script>
         
-        function changeSelectedCell(cell) {
-          isHighlighted = cell.classList.contains('selected');
-          if (!isHighlighted) {
-            var cells = document.getElementsByClassName("cell");
-            for (var i = 0; i < cells.length; i++) {
-              cells.item(i).classList.remove('selected');
-            }
-              cell.classList.add('selected');
+      function changeSelectedCell(cell) {
+        isHighlighted = cell.classList.contains('selected');
+        if (!isHighlighted) {
+          var cells = document.getElementsByClassName("cell");
+          for (var i = 0; i < cells.length; i++) {
+            cells.item(i).classList.remove('selected');
           }
+            cell.classList.add('selected');
+        }
       }
 
       function numberButtonWasTapped(button) {
-        var move =  button.textContent; 
-        var selected = document.getElementsByClassName('selected')[0];
-        var coords = selected.id.split('');
-        var x = coords[0];
-        var y = coords[1];
-        var baseURL = "/api/v1/move?x=" + x + "&y=" + y;
-        var reqUrl = (move == "X") ? baseURL : baseURL  + "&move="+ move ;
-        
-        
-        
-        fetch(reqUrl)
-          .then((response) => {
-            if (response.ok) {
-              return response.json()
-            } else {
-              throw new Error(`${response.status} ${response.statusText}`);
-            }
-          })
-          .then((json) => populateBoard(json));
+        let move = button.textContent == "X" ? null : button.textContent; 
+        doMove(move)
       }
+
+      function getSelectedCellCoords() {
+        let selected = document.getElementsByClassName('selected')[0];
+        let coords = selected.id.split('');
+        return coords
+      }
+
+        function doMove(move) {
+          let coords = getSelectedCellCoords();
+          let x = coords[0];
+          let y = coords[1];
+          let baseURL = "/api/v1/move?x=" + x + "&y=" + y;
+          let reqUrl = (move ==  null) ? baseURL : baseURL  + "&move="+ move ;
+  
+          fetch(reqUrl)
+            .then((response) => {
+              if (response.ok) {
+                return response.json()
+              } else {
+                throw new Error(`${response.status} ${response.statusText}`);
+              }
+            })
+            .then((json) => populateBoard(json));
+
+        }
+
         function populateBoard(json) {
           currentBoard = json;
+          var hasSeenEmpty = false
           for (var row = 0; row < 9; row++) {
             for (var col = 0; col < 9; col++) {
               let cell = document.getElementById(row.toString() + col.toString());
@@ -99,6 +109,7 @@ let render _ =
               }
               
               if (currentBoard[row][col][0] === "Empty") {
+                hasSeenEmpty = true;
                 cell.textContent = "";  
               } else if (currentBoard[row][col][0] === "Fixed") {
                   cell.classList.add('bold')
@@ -107,6 +118,13 @@ let render _ =
                   cell.textContent = currentBoard[row][col][1]
               }
             }
+          }
+          if (!hasSeenEmpty) {
+            console.log("You have won");
+          setTimeout(function() {
+            alert("You have won!!");
+          }, 500);
+            
           }
 
         }
@@ -121,6 +139,37 @@ let render _ =
           })
           .then((json) => populateBoard(json));
 
+        document.addEventListener('keydown', function(event) {
+          console.log(event.keyCode);
+
+            let coords = getSelectedCellCoords();
+            let row = parseInt(coords[0]);
+            let col = parseInt(coords[1]);
+
+            if(event.keyCode >= 49 && event.keyCode <= 59) {
+              doMove(event.keyCode - 48 )
+            }
+            else if(event.keyCode == 8) {
+              doMove(null)
+            } else if (event.keyCode == 38 && row > 0) { // Arrow up 
+                let cell = document.getElementById((row - 1).toString() + col.toString());
+                changeSelectedCell(cell);
+                event.preventDefault();
+            } else if (event.keyCode == 40 && row < 8) { // Arrow down 
+              let cell = document.getElementById((row + 1).toString() + col.toString());
+              changeSelectedCell(cell);
+              event.preventDefault();
+            } else if (event.keyCode == 37 && col > 0) { // Arrow left 
+              let cell = document.getElementById(row.toString() + (col - 1).toString());
+              changeSelectedCell(cell);
+              event.preventDefault();
+            } else if (event.keyCode == 39 && col < 8) { // Arrow right 
+              let cell = document.getElementById(row.toString() + (col + 1).toString());
+              changeSelectedCell(cell);
+              event.preventDefault();
+            }
+            
+        });
         </script>
     </head>
     <body>
