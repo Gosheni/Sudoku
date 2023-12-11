@@ -29,13 +29,13 @@
 (library
  (name iolib)
  (modules iolib)
- (libraries core yojson core_unix board)
+ (libraries core yojson core_unix board core_unix.sys_unix)
  (preprocess
   (pps ppx_jane ppx_deriving_yojson)))
 
 (executable
  (name sudoku)
  (modules sudoku)
- (libraries grid board core game yojson iolib core_unix.command_unix)
+ (libraries grid board core game iolib core_unix.command_unix)
  (preprocess
   (pps ppx_jane)))

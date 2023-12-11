@@ -33,7 +33,25 @@ We implement the game Sudoko including:
 4. **Include a mock of a use of your application, along the lines of the Minesweeper example above but showing the complete protocol.**
 
     ``` sh
-    $ ./sudoku.exe init # initialize a new game (sudoku_game.json)
+    $ ./sudoku.exe init sudoku_game # initialize a new game with given name (e.g. sudoku_game.json) 
+                                    # difficulty value represents the number of tiles removed from a complete board (default difficulty: 54)
+        1 2 3   4 5 6   7 8 9
+      -------------------------
+   1 |     6 |       |     1 |
+   2 |   7   |   6   |   5   |
+   3 | 8     | 1   3 | 2     |
+      -------------------------
+   4 |     5 |       | 8     |
+   5 |   4   | 7   2 |   9   |
+   6 |     8 |   1   | 7     |
+      -------------------------
+   7 |     1 | 2   5 |     3 |
+   8 |   6   |   7   |   8   |
+   9 | 2     |       | 4     |
+      -------------------------
+
+   $ ./sudoku.exe init 53 sudoku_game2 # initialize a new game with given name and set difficulty of 53        
+                                       # (sudoku_game2.json)
         1 2 3   4 5 6   7 8 9
       -------------------------
    1 |     6 |       |     1 |
