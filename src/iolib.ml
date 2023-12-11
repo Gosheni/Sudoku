@@ -1,4 +1,5 @@
 open Board
+open Core
 
 let save_board_to_json filename data =
   Sudoku_board.serialize data |> Yojson.Safe.to_file filename
@@ -7,7 +8,6 @@ let load_board_from_json filename : Sudoku_board.t option =
   try Yojson.Safe.from_file filename |> Sudoku_board.deserialize
   with _ -> None
 
-(*
 module Configuration = struct
   type highscore = { title : string; difficulty : int; total_time : float }
   [@@deriving equal, yojson]
@@ -37,6 +37,34 @@ module Configuration = struct
 
   let update = save_config
 
+  let add_game (title : string) (difficulty : int) (game : Sudoku_board.t) :
+      unit =
+    let filename = (title |> String.filter ~f:Char.is_alphanum) ^ ".json" in
+    save_board_to_json filename game;
+    let config = load_config () in
+    let g =
+      {
+        title;
+        file_location = filename;
+        start_time = Core_unix.time ();
+        difficulty;
+      }
+    in
+    save_config { highscores = config.highscores; games = g :: config.games }
+
+  let update_game (title : string) (game : Sudoku_board.t) : unit =
+    title
+    |> String.filter ~f:Char.is_alphanum
+    |> Fn.flip save_board_to_json game
+
+  let get_game (title : string) : Sudoku_board.t option =
+    let config = load_config () in
+    match
+      List.find config.games ~f:(fun game -> String.(game.title = title))
+    with
+    | None -> None
+    | Some game -> load_board_from_json game.file_location
+
   let finish_game (title : string) : (unit, string) result =
     let config = load_config () in
     match
@@ -59,4 +87,3 @@ module Configuration = struct
         save_config { highscores = new_highscores_list; games = new_games_list };
         Ok ()
 end
-*)
