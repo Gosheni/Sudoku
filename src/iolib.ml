@@ -5,11 +5,9 @@ let save_board_to_json filename data =
   Sudoku_board.serialize data |> Yojson.Safe.to_file filename
 
 let delete_game filename =
-  try
-    Sys_unix.remove filename;
+  try Sys_unix.remove filename
   with Sys_error msg ->
     Stdio.eprintf "Error deleting file '%s': %s\n" filename msg
-  
 
 let load_board_from_json filename : Sudoku_board.t option =
   try Yojson.Safe.from_file filename |> Sudoku_board.deserialize
@@ -60,15 +58,11 @@ module Configuration = struct
     save_config { highscores = config.highscores; games = g :: config.games }
 
   let update_game (name : string) (game : Sudoku_board.t) : unit =
-    name
-    |> String.filter ~f:Char.is_alphanum
-    |> Fn.flip save_board_to_json game
+    name |> String.filter ~f:Char.is_alphanum |> Fn.flip save_board_to_json game
 
   let get_game (name : string) : Sudoku_board.t option =
     let config = load_config () in
-    match
-      List.find config.games ~f:(fun game -> String.(game.name = name))
-    with
+    match List.find config.games ~f:(fun game -> String.(game.name = name)) with
     | None -> None
     | Some game -> load_board_from_json game.file_location
 
@@ -79,17 +73,20 @@ module Configuration = struct
 
   let move_game_to_first filename =
     let config = load_config () in
-    let game = List.find_exn config.games ~f:(fun game -> String.(game.file_location = filename)) in
-    let new_games_list =
-      List.filter config.games ~f:(fun g -> String.(g.file_location <> filename))
+    let game =
+      List.find_exn config.games ~f:(fun game ->
+          String.(game.file_location = filename))
     in
-    save_config { highscores = config.highscores; games = game :: new_games_list }
+    let new_games_list =
+      List.filter config.games ~f:(fun g ->
+          String.(g.file_location <> filename))
+    in
+    save_config
+      { highscores = config.highscores; games = game :: new_games_list }
 
   let finish_game (name : string) : (unit, string) result =
     let config = load_config () in
-    match
-      List.find config.games ~f:(fun game -> String.(game.name = name))
-    with
+    match List.find config.games ~f:(fun game -> String.(game.name = name)) with
     | None -> Error "This game does not exist"
     | Some game ->
         let time_spent = Float.(Core_unix.time () - game.start_time) in

@@ -15,8 +15,7 @@ let make_move current_board (v : int option) r c =
       if Sudoku_board.is_solved current_board then
         Stdio.print_endline "Solved the Sudoku game!";
       match Configuration.finish_game "Name" with
-      | Ok () ->
-          Stdio.print_endline "Game finished and recorded\n"
+      | Ok () -> Stdio.print_endline "Game finished and recorded\n"
       | Error msg -> Stdio.print_endline ("Error: " ^ msg))
   | Error e -> (
       match e with
@@ -59,7 +58,7 @@ let () =
              save_board_to_json (b ^ ".json") current_board;
              Configuration.add_game b difficulty current_board;
              Stdio.printf "Initialized a new game %s!\n" b;
-             Stdio.print_endline (Sudoku_board.pretty_print current_board);
+             Stdio.print_endline (Sudoku_board.pretty_print current_board)
            with Failure _ ->
              Stdio.print_endline
                "Invalid arguments for init command: Integer expected")
@@ -84,15 +83,15 @@ let () =
                Stdio.print_endline "The puzzle is already solved!");
            Stdio.print_endline (Sudoku_board.pretty_print current_board)
        | "solve", None -> (
-        let current_board = get_current_board_exn () in
-          assert (not (Sudoku_board.is_solved current_board));
+           let current_board = get_current_board_exn () in
+           assert (not (Sudoku_board.is_solved current_board));
            match Sudoku_board.solve_with_unique_solution current_board with
            | Some board -> (
                save_board_to_json (name () ^ ".json") board;
                Stdio.print_endline "Solved the Sudoku game!";
                Stdio.print_endline (Sudoku_board.pretty_print board);
                match Configuration.finish_game (name ()) with
-               | Ok () -> Stdio.print_endline "Game finished and recorded\n";
+               | Ok () -> Stdio.print_endline "Game finished and recorded\n"
                | Error msg -> Stdio.print_endline ("Error: " ^ msg))
            | None -> Stdio.print_endline "Unsolvable!")
        | "move", Some [ a; b; c ] -> (
