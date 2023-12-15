@@ -58,7 +58,8 @@ module Configuration = struct
     save_config { highscores = config.highscores; games = g :: config.games }
 
   let update_game (name : string) (game : Sudoku_board.t) : unit =
-    name |> String.filter ~f:Char.is_alphanum |> Fn.flip save_board_to_json game
+    let filename = (name |> String.filter ~f:Char.is_alphanum) ^ ".json" in
+    save_board_to_json filename game
 
   let get_game (name : string) : Sudoku_board.t option =
     let config = load_config () in
