@@ -64,23 +64,8 @@ let () =
                "Invalid arguments for init command: Integer expected")
        | "hint", None ->
            let current_board = get_current_board_exn () in
-           (match generate_hint ~use_crooks:true current_board with
-           | Incorrect_cell ->
-               Stdio.printf
-                 "Puzzle no longer has a unique solution. There is an \
-                  incorrect cell somewhere\n"
-           | Suggest_guess (move, desc) ->
-               Stdio.printf
-                 "No suggested move is present. Try to guess at row %d col %d\n"
-                 (move.x + 1) (move.y + 1);
-               Stdio.print_endline desc
-           | Suggested_move (move, desc) ->
-               Stdio.printf "Suggested move: Add value %d to row %d col %d\n"
-                 (Option.value_exn move.value)
-                 (move.x + 1) (move.y + 1);
-               Stdio.print_endline desc
-           | Already_solved ->
-               Stdio.print_endline "The puzzle is already solved!");
+           let hint = generate_hint ~use_crooks:true current_board in
+           Stdio.print_endline @@ describe_hint hint;
            Stdio.print_endline (Sudoku_board.pretty_print current_board)
        | "solve", None -> (
            let current_board = get_current_board_exn () in

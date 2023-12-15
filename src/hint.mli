@@ -12,7 +12,10 @@ module Hint_system : sig
   val make_possibility_sets : Board.Sudoku_board.t -> t
   (** Transform a sudoku board into a markup by finding all possible moves at every space on the board *)
 
-  val get_forced_moves : t -> (int * int * int * string) list
+  type forced_source = Row | Col | Block | Single | Incorrect
+  (** hints are forced moves from either a certain section, being the only option or having a mistake *)
+
+  val get_forced_moves : t -> (int * int * int * forced_source) list
   (** Takes a markup and returns a list of moves that are forced by the sudoku rules. Each returned move
         is of the form row, col, element, description.
         Description is a string that tells us what exactly forced this move *)
