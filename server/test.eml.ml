@@ -8,6 +8,19 @@ let single_cell id =
 
 let number_button number =
   <td class="numberButton" id="numberButton<%s number %>" onclick="numberButtonWasTapped(this)"><%s (number)%></td>
+
+let hint_area _ = 
+  <table>
+    <tr>
+      <td>
+      <button class="hint-button" onclick="hintButtonWasTapped(this)">Give me a hint</button>
+      </td>
+    </tr>
+    <tr>
+      <td class="hint-area" id="hint">Hint text appears here</td>
+    </tr>
+  </table>
+
 let table_row id = 
   <tr id="<%s id %>">
     <%s! 
@@ -54,10 +67,44 @@ let render _ =
         .bold {
           font-weight: 600;
         }
+        .container {
+          display: flex;
+        }
+        .darkened {
+          background-color: #3d3d3d;
+        }
+        .main-hint {
+          background-color: #d3d3d3;
+          border: 5px solid grey;
+        }
+        .playarea {
+          display: flex;
+          flex-direction: column;
+        }
+        .hint-container {
+          margin-left: 30px;
+        }  
+        .hint-area {
+          font-size: 20px;
+          width: 800px;
+          height: 100px;
+          padding: 10px;
+          position: relative;
+        }
+        .hint-button{
+          align: center;
+          display: inline-block;
+          background-color: #d3d3d3;
+          border-radius: 7px;
+          width: 200px;
+          font-size: 15px;
+        }
         </style>
         <script>
-        
+      let hintCalled = false;
+      
       function changeSelectedCell(cell) {
+        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
         isHighlighted = cell.classList.contains('selected');
         if (!isHighlighted) {
           var cells = document.getElementsByClassName("cell");
@@ -68,7 +115,61 @@ let render _ =
         }
       }
 
+      function hintButtonWasTapped(button) {
+        fetch("/api/v1/hint")
+          .then((response) => {
+            hintCalled = true;
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+          })
+          .then((json) => makeHint(json));
+      }
+
+      function highlightHint(squares, target) {
+        unhighlightCells(); // in case two hints are asked for in a row
+        hintCalled = true;
+        var cells = document.getElementsByClassName("cell");
+        for (var i = 0; i < cells.length; i++) {
+          cells.item(i).classList.add("darkened");
+        }
+        for (var i = 0; i < squares.length; i++) {
+          var square = squares[i];
+          var x = square[0];
+          var y = square[1];
+          var cell = document.getElementById(x.toString() + y.toString());
+          cell.classList.remove("darkened");
+        }
+        var targetCell = document.getElementById(target[0].toString() + target[1].toString());
+        targetCell.classList.add("main-hint");
+      }
+
+      function unhighlightCells() {
+        if (hintCalled) {
+          var cells = document.getElementsByClassName("cell");
+          for (var i = 0; i < cells.length; i++) {
+            cells.item(i).classList.remove("darkened");
+            if (cells.item(i).classList.contains("main-hint")) {
+              cells.item(i).classList.remove("main-hint");
+            }
+          }
+          hintCalled = false;
+        }
+      }
+
+      function makeHint(json) {
+        var hint = json["hint"];
+        var squares = json["squares"];
+        var target = json["target"];
+        highlightHint(squares, target);
+        var hintText = document.getElementById("hint");
+        hintText.textContent = hint;
+      }
+
       function numberButtonWasTapped(button) {
+        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
         let move = button.textContent == "X" ? null : button.textContent; 
         doMove(move)
       }
@@ -144,6 +245,7 @@ let render _ =
 
         document.addEventListener('keydown', function(event) {
             console.log(event.keyCode);
+            unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
 
             let coords = getSelectedCellCoords();
             let row = parseInt(coords[0]);
@@ -176,6 +278,8 @@ let render _ =
         </script>
     </head>
     <body>
+    <div class="container">
+      <div class="playarea">
         <table class="sudoku-table">
           <%s! 
           List.range 0 9
@@ -183,7 +287,7 @@ let render _ =
           |> List.map ~f: table_row 
           |> List.fold ~init: "" ~f: (^) %>
         </table>
-        <br/>
+        <div class="numberbuttons" style="margin-top: 10px">
         <table>
           <tr> 
           <%s! 
@@ -194,8 +298,33 @@ let render _ =
           <%s! number_button "X" %>
           </tr>
         </table>
+        </div>
+      </div>
+      <div class="hint-container">
+        <%s! hint_area () %>
+      </div>
+    </div>
     </body>
   </html>
+
+let get_squares_to_highlight (move : Sudoku_game.move)
+  (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
+  let open Hint.Hint_system in
+  let get_section_as_coordinate_list (make_coord : int -> int * int) =
+    List.range 0 9 |> List.map ~f:make_coord
+    |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
+  in
+  match forced_by with
+  | Single | Incorrect -> [ (move.x, move.y) ]
+  | Row -> get_section_as_coordinate_list (fun y -> (move.x, y))
+  | Col -> get_section_as_coordinate_list (fun x -> (x, move.y))
+  | Block ->
+      let make_coord_board x =
+        let y = x mod 3 in
+        let x = x / 3 in
+        ((move.x / 3 * 3) + x, (move.y / 3 * 3) + y)
+      in
+      get_section_as_coordinate_list make_coord_board
 
 let get_board request =
   match Dream.cookie request "current.game" with
@@ -205,59 +334,84 @@ let get_board request =
       | None -> None
       | Some game -> Some (game, game_title))
 
-let parse_move request =
-  let apply_move move =
-    match get_board request with
-    | None -> Dream.json ~code:405 "{\"error\":\"some error\"}"
-    | Some (game, game_title) -> (
-        match Sudoku_game.do_move game move with
-        | Ok new_board ->
-            Configuration.update_game game_title new_board;
-            let json =
-              Sudoku_board.serialize new_board |> Yojson.Safe.to_string
-            in
-            Dream.json json
-        | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}")
-  in
-  match
-    ( Dream.query request "x",
-      Dream.query request "y",
-      Dream.query request "move" )
-  with
-  | Some x, Some y, Some move ->
-      apply_move
-        {
-          x = Int.of_string x;
-          y = Int.of_string y;
-          value = Some (Int.of_string move);
-        }
-  | Some x, Some y, None ->
-      apply_move { x = Int.of_string x; y = Int.of_string y; value = None }
-  | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}"
+let hint_to_json (hint : Sudoku_game.hint) : Yojson.Safe.t =
+  match hint with
+  | Incorrect_cell | Already_solved | Suggest_guess _ ->
+      let desc = Sudoku_game.describe_hint hint in
+      `Assoc [ ("hint", `String desc) ]
+  | Suggested_move (move, forced_by) ->
+      let squares_to_highlight = get_squares_to_highlight move forced_by in
+      let squares_as_string =
+        `List
+          (List.map
+            ~f:(fun (x, y) -> `List [ `Int x; `Int y ])
+            squares_to_highlight)
+      in
+      let desc = Sudoku_game.describe_hint hint in
+      let target = `List [ `Int move.x; `Int move.y ] in
+      `Assoc
+        [
+          ("hint", `String desc);
+          ("squares", squares_as_string);
+          ("target", target);
+        ]
+
+let parse_hint request =
+  match get_board request with
+  | None -> Dream.respond "error"
+  | Some (game, _) ->
+      let hint = Sudoku_game.generate_hint ~use_crooks:true game in
+      let json = hint_to_json hint |> Yojson.Safe.to_string in
+      Dream.json json
+        
+      
+let parse_move request = 
+  let apply_move move = 
+      match get_board request with 
+      | None -> Dream.json ~code: 405 "{\"error\":\"some error\"}" 
+      | Some (game, game_title) -> 
+          match Sudoku_game.do_move game move with 
+          | Ok new_board ->  
+              (Configuration.update_game game_title new_board;
+              let json = Sudoku_board.serialize new_board |> Yojson.Safe.to_string in 
+              Dream.json json )
+          | _ -> Dream.json ~code: 405 "{\"error\":\"some error\"}" 
+  in 
+  (match (Dream.query request "x", Dream.query request "y", Dream.query request "move") with 
+        | Some x, Some y, Some move -> 
+          apply_move { x=Int.of_string x; y =Int.of_string y; value= Some (Int.of_string move) }
+        | Some x, Some y, None -> 
+          apply_move { x=Int.of_string x; y =Int.of_string y; value= None }
+        | _ -> 
+          Dream.json ~code: 405 "{\"error\":\"some error\"}" 
+        )  
+
+
 
 let () =
-  Dream.run @@ Dream.logger
-  @@ Dream.router
-       [
-         Dream.get "/api/v1/initialize" (fun request ->
-             let open Sudoku_board in
-             let difficulty = 20 in
-             let board =
-               generate_random () |> Fn.flip generate_degenerate difficulty
-             in
-             let board_json : string =
-               serialize board |> Yojson.Safe.to_string
-             in
-             let title =
-               List.init 20 ~f:(fun _ -> Random.int 10)
-               |> List.map ~f:Int.to_string |> List.map ~f:Char.of_string
-               |> String.of_list
-             in
-             Configuration.add_game title difficulty board;
-             let response = Dream.response board_json in
-             Dream.add_header response "Content-Type" "application/json";
-             Dream.set_cookie response request "current.game" title;
-             Lwt.return response);
-         Dream.get "/" (fun _ -> Dream.html (render ()));
-         Dream.get "/api/v1/move" parse_move;
-       ]
+Dream.run
+@@ Dream.logger
+@@ Dream.router [
+  Dream.get "/api/v1/initialize" (fun request ->
+    let open Sudoku_board in 
+
+    let difficulty = 50 in 
+    let board = generate_random  () |> Fn.flip generate_degenerate difficulty in 
+    let board_json: string = serialize board |> Yojson.Safe.to_string in 
+    let title = List.init 20 ~f:(fun _ -> Random.int 10) |> List.map ~f: Int.to_string 
+        |> List.map ~f: Char.of_string 
+        |> String.of_list in 
+    Configuration.add_game title difficulty board; 
+    let response = Dream.response board_json in
+    Dream.add_header response "Content-Type" "application/json";
+    Dream.set_cookie response request "current.game" title;
+    Lwt.return response
+  );
+
+  Dream.get "/" (fun _ ->
+    Dream.html (render ()));
+
+    Dream.get "/api/v1/move" parse_move;
+
+    Dream.get "/api/v1/hint" parse_hint
+]

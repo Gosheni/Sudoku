@@ -68,14 +68,15 @@ module Hint_system = struct
     List.fold l2 ~init:l1 ~f:(fun acc x ->
         if List.mem acc x ~equal:Int.equal then acc else x :: acc)
 
-  let get_forced_moves (possib : t) : (int * int * int * string) list =
+  type forced_source = Row | Col | Block | Single | Incorrect
+
+  let get_forced_moves (possib : t) : (int * int * int * forced_source) list =
     assert (is_valid possib);
     Map.fold possib ~init:[] ~f:(fun ~key:row_idx ~data:row acc ->
         Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
             match elem with
             | [] -> acc
-            | [ single_move ] ->
-                (row_idx, col_idx, single_move, "singleton") :: acc
+            | [ single_move ] -> (row_idx, col_idx, single_move, Single) :: acc
             | lst ->
                 (* check if more than one element in the section could possibly be x *)
                 let already_present (x : int) (section : element list) : bool =
@@ -105,16 +106,16 @@ module Hint_system = struct
                   let forced_elem = List.hd_exn all_unique in
                   let forced_by =
                     if List.mem unique_in_row forced_elem ~equal:Int.equal then
-                      "row"
+                      Row
                     else if List.mem unique_in_col forced_elem ~equal:Int.equal
-                    then "col"
-                    else "block"
+                    then Col
+                    else Block
                   in
                   (* TODO: handle case where forced by multiple sections *)
                   (row_idx, col_idx, forced_elem, forced_by) :: acc
                 else if List.length all_unique > 1 then
                   (* multiple unique elements in same cell which is impossible *)
-                  (row_idx, col_idx, -1, "error") :: acc
+                  (row_idx, col_idx, -1, Incorrect) :: acc
                   (* -1 means an error exists in the current block, which is still a kind of hint*)
                 else acc))
 

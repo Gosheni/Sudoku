@@ -11,7 +11,7 @@ module Sudoku_game = struct
   type hint =
     | Incorrect_cell
     | Suggest_guess of (move * string)
-    | Suggested_move of (move * string)
+    | Suggested_move of (move * Hint_system.forced_source)
     | Already_solved
 
   let do_move (board : Sudoku_board.t) (move : move) :
@@ -46,34 +46,76 @@ module Sudoku_game = struct
     let new_move = { x = best_row; y = best_col; value = None } in
     Suggest_guess (new_move, desc)
 
-  let make_full_desc (desc : string) (elem : int) (x : int) (y : int)
-      (removed : int list) : string =
-    let removed =
-      if List.length removed = 0 then "This "
-      else
-        List.to_string removed ~f:Int.to_string
-        ^ " can't appear in this cell because they were required in other \
-            cells. Therefore, this"
-    in
-    let intro = "cell must be " ^ Int.to_string elem ^ " because " in
-    let desc =
-      match desc with
-      | "singleton" -> "it is the only possible value for this cell"
-      | "row" ->
-          "it is the only possible appearance of " ^ Int.to_string elem
-          ^ " in row "
-          ^ Int.to_string (x + 1)
-      | "col" ->
-          "it is the only possible appearance of " ^ Int.to_string elem
-          ^ " in column "
-          ^ Int.to_string (y + 1)
-      | "block" ->
-          "it is the only possible appearance of " ^ Int.to_string elem
-          ^ " in its 3x3 block"
-      | other -> other
-    in
-    removed ^ intro ^ desc
+  (* probably can delete this function, no longer used 
   
+  let make_full_desc (desc: string ) (elem : int) (x : int) (y : int)
+       (removed : int list) : string =
+     let removed =
+       if List.length removed = 0 then "This "
+       else
+         List.to_string removed ~f:Int.to_string
+         ^ " can't appear in this cell because they were required in other \
+             cells. Therefore, this"
+     in
+     let intro = "cell must be " ^ Int.to_string elem ^ " because " in
+     let desc =
+       match desc with
+       | "singleton" -> "it is the only possible value for this cell"
+       | "row" ->
+           "it is the only possible appearance of " ^ Int.to_string elem
+           ^ " in row "
+           ^ Int.to_string (x + 1)
+       | "col" ->
+           "it is the only possible appearance of " ^ Int.to_string elem
+           ^ " in column "
+           ^ Int.to_string (y + 1)
+       | "block" ->
+           "it is the only possible appearance of " ^ Int.to_string elem
+           ^ " in its 3x3 block"
+       | other -> other
+     in
+     removed ^ intro ^ desc *)
+
+  let describe_hint (generated_hint : hint) : string =
+    match generated_hint with
+    | Incorrect_cell ->
+        "Puzzle no longer has a unique solution. There is an incorrect cell \
+         somewhere"
+    | Already_solved -> "The puzzle is already solved!"
+    | Suggest_guess (move, desc) ->
+        let x = move.x + 1 |> Int.to_string in
+        let y = move.y + 1 |> Int.to_string in
+        "No suggested move is present. Try to guess at row " ^ x ^ " col " ^ y
+        ^ "\n\n" ^ desc
+    | Suggested_move (move, forced_by) ->
+        let elem = move.value |> Option.value_exn |> Int.to_string in
+        let x = move.x + 1 |> Int.to_string in
+        let y = move.y + 1 |> Int.to_string in
+        let intro =
+          if equal_string elem "-1" then
+            "Mistake made at row " ^ x ^ " col " ^ y ^ " because "
+          else
+            "Suggested move: Add value " ^ elem ^ " to row " ^ x ^ " col " ^ y
+            ^ " because "
+        in
+        let desc =
+          match forced_by with
+          | Hint_system.Single -> "it is the only possible value for this cell"
+          | Hint_system.Row ->
+              "it is the only possible appearance of " ^ elem ^ " in row "
+              ^ Int.to_string (move.x + 1)
+          | Hint_system.Col ->
+              "it is the only possible appearance of " ^ elem ^ " in column "
+              ^ Int.to_string (move.y + 1)
+          | Hint_system.Block ->
+              "it is the only possible appearance of " ^ elem
+              ^ " in its 3x3 block"
+          | Hint_system.Incorrect ->
+              "this cell is forced to contain two different values. There is \
+               an incorrect cell somewhere"
+        in
+        intro ^ desc
+
   let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint
       =
     match Sudoku_board.solve_with_unique_solution board with
@@ -84,7 +126,8 @@ module Sudoku_game = struct
         if Sudoku_board.is_solved board then Already_solved
         else
           let possibile_moves = Hint_system.make_possibility_sets board in
-          let forced_moves : (int * int * int * string) list =
+          let forced_moves : (int * int * int * Hint_system.forced_source) list
+              =
             Hint_system.get_forced_moves possibile_moves
           in
           if List.length forced_moves = 0 then
@@ -103,7 +146,7 @@ module Sudoku_game = struct
                   | Some _ -> make_guess_suggestion possibile_moves
                   (* if still no forced moves after using crooks suggest guess *)
                 else
-                  let x, y, elem, desc =
+                  let x, y, elem, forced_by =
                     List.nth_exn new_forced_moves
                       (List.length new_forced_moves |> Random.int)
                   in
@@ -116,20 +159,16 @@ module Sudoku_game = struct
                     let after_removal =
                       Hint_system.get updated_possibs x y |> Option.value_exn
                     in
-                    let removed =
+                    let _ =
                       List.filter original_moves ~f:(fun x ->
                           not (List.mem after_removal x ~equal:Int.equal))
                     in
-                    let full_desc = make_full_desc desc elem x y removed in
-                    Suggested_move (next_move, full_desc)
+                    (* let full_desc = make_full_desc desc elem x y removed in *)
+                    Suggested_move (next_move, forced_by)
           else
-            let x, y, elem, desc =
+            let x, y, elem, forced_by =
               List.nth_exn forced_moves (List.length forced_moves |> Random.int)
             in
-            if elem = -1 then Incorrect_cell
-            else
-              (* let _ = print_endline ("x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " elem: " ^ (string_of_int elem)) in *)
-              let next_move : move = { x; y; value = Some elem } in
-              let full_desc = make_full_desc desc elem x y [] in
-              Suggested_move (next_move, full_desc)
+            let next_move : move = { x; y; value = Some elem } in
+            Suggested_move (next_move, forced_by)
 end
