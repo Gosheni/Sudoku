@@ -2,6 +2,7 @@ open Core
 
 module Sudoku_board = struct
   module S_element = struct
+    [@@@ coverage off]
     type element = Empty | Fixed of int | Volatile of int
     [@@deriving yojson, equal]
 

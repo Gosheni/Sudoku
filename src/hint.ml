@@ -2,7 +2,8 @@ open Core
 
 module Hint_system = struct
   module S_element = struct
-    type element = int list [@@deriving yojson, equal]
+    [@@@ coverage off]
+    type element = int list [@@deriving yojson, equal] 
 
     let element_is_valid (element : element) : bool =
       List.for_all element ~f:(fun x -> x >= 1 && x <= 9)
@@ -115,7 +116,8 @@ module Hint_system = struct
                   (row_idx, col_idx, forced_elem, forced_by) :: acc
                 else if List.length all_unique > 1 then
                   (* multiple unique elements in same cell which is impossible *)
-                  (row_idx, col_idx, -1, Incorrect) :: acc
+                  (row_idx, col_idx, -1, Incorrect) :: acc [@ coverage off]
+
                   (* -1 means an error exists in the current block, which is still a kind of hint*)
                 else acc))
 

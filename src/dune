@@ -24,7 +24,7 @@
  (modules game)
  (libraries core yojson board hint)
  (preprocess
-  (pps ppx_jane ppx_deriving_yojson)))
+  (pps ppx_jane bisect_ppx ppx_deriving_yojson)))
 
 (library
  (name iolib)
