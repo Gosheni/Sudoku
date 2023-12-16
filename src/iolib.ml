@@ -86,11 +86,6 @@ module Configuration = struct
     let config = load_config () in
     List.hd config.games |> Option.bind ~f:(fun game -> get_game game.name)
 
-  let get_most_recent_exn _ : game * Board.Sudoku_board.t =
-    match get_most_recent () with
-    | None -> failwith "Current game not found"
-    | Some a -> a
-
   let move_game_to_first game_name : Sudoku_board.t option =
     match get_game_with_name game_name with
     | None -> None
