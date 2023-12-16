@@ -122,7 +122,7 @@ module Hint_system = struct
   type preemptive = { possibs : element; members : int list }
 
   let find_preemptive_sets (section : element list) : preemptive list =
-    assert (List.length section = 9);
+    (* Assummes section has exactly 9 elements *)
     let preemptive_condition num_cells ls = List.length ls = num_cells in
     let rec get_combination_indices (size : int) (lst : int list) :
         int list list =

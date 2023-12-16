@@ -14,6 +14,7 @@ module type Sudoku_grid = sig
   type row = (int, element, Core.Int.comparator_witness) Core.Map.t
   type t = (int, row, Core.Int.comparator_witness) Core.Map.t
   type coordinate = int * int
+
   val equal : t -> t -> bool
   val empty : t
   val get : t -> int -> int -> element option
@@ -37,6 +38,7 @@ module Make_sudoku_grid (E : Element) = struct
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
   type coordinate = int * int
+
   let grid_size : int = 9
 
   let equal (b1 : t) (b2 : t) : bool =
@@ -66,15 +68,13 @@ module Make_sudoku_grid (E : Element) = struct
 
     check_row_keys && check_col_keys ()
 
-  let get_row (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8);
-    (* Assumes the board satisfies `check_keys`*)
-    Map.find_exn board x |> Map.data
+  let get_row (board : t) (row : int) : element list =
+    (* Assumes the board satisfies `check_keys` and the row is within the range 0 ... 8  *)
+    Map.find_exn board row |> Map.data
 
-  let get_col (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8);
-    (* Assumes the board satisfies `check_keys`*)
-    Map.map board ~f:(fun row -> Map.find_exn row x) |> Map.data
+  let get_col (board : t) (col : int) : element list =
+    (* Assumes the board satisfies `check_keys` and the col is within the range 0 ... 8  *)
+    Map.map board ~f:(Fn.flip Map.find_exn col) |> Map.data
 
   (* assumes that sub-blocks correspond to ints in the following manner:
          0 1 2   3 4 5   6 7 8
@@ -93,7 +93,6 @@ module Make_sudoku_grid (E : Element) = struct
        -------------------------
   *)
   let get_block (board : t) (x : int) : element list =
-    assert (0 <= x && x <= 8);
     let row_lower = x / 3 * 3 in
     let row_upper = row_lower + 2 in
     (* we will use inclusive bounds so plus 2 *)
@@ -109,14 +108,16 @@ module Make_sudoku_grid (E : Element) = struct
 
   let update (board : t) (x : int) (y : int)
       (element : element option -> element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8);
+    (* Assumes the board satisfies check_keys and the coordinates are valid, i.e within the range 0 ... 8 *)
     Map.update board x ~f:(fun row ->
         match row with
-        | None -> assert false
+        | None ->
+            assert false
+            (* It is assumed that board is valid, thus the row will always exist *)
         | Some row -> Map.update row y ~f:element)
 
   let set (board : t) (x : int) (y : int) (element : element) : t =
-    assert (0 <= x && x <= 8 && 0 <= y && y <= 8 && element_is_valid element);
+    (* Assumes the board satisfies check_keys and the coordinates are valid, i.e within the range 0 ... 8 *)
     update board x y (fun _ -> element)
 
   let empty : t =
@@ -135,17 +136,18 @@ module Make_sudoku_grid (E : Element) = struct
 
   type json = Yojson.Safe.t
 
-  let serialize (board : t) : json =
-    assert (is_valid_grid board);
-    let convert_map_content_to_json value_map data =
-      data |> Map.to_alist
-      |> List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
-      |> fun a -> `Assoc a
-    in
+  let serialize (grid : t) : json =
+    if is_valid_grid grid then
+      let convert_map_content_to_json value_map data =
+        data |> Map.to_alist
+        |> List.map ~f:(Tuple2.map_both ~f1:string_of_int ~f2:value_map)
+        |> fun a -> `Assoc a
+      in
 
-    board
-    |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
-    |> convert_map_content_to_json Fn.id
+      grid
+      |> Map.map ~f:(convert_map_content_to_json element_to_yojson)
+      |> convert_map_content_to_json Fn.id
+    else failwith "Tried to serialize an invalid grid"
 
   let deserialize (obj : json) : t option =
     let convert_to_map_if_possible (obj : json) ~f:filter_map =

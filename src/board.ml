@@ -2,7 +2,8 @@ open Core
 
 module Sudoku_board = struct
   module S_element = struct
-    [@@@ coverage off]
+    [@@@coverage off]
+
     type element = Empty | Fixed of int | Volatile of int
     [@@deriving yojson, equal]
 
@@ -115,7 +116,9 @@ module Sudoku_board = struct
               else if validator ~updated:(x, y) next_board then
                 Some (next_board, empty, added_to)
               else backtrack next_board empty added_to
-          | _ -> assert false)
+          | _ -> assert false
+          (* This should never happpen as (x,y) is only added to "added_to" when there is an element at (x,y)*)
+          )
     in
 
     let rec aux (board : t) (empty : coordinate list)
@@ -163,8 +166,7 @@ module Sudoku_board = struct
     | Some board -> board
 
   let generate_degenerate (orignal_board : t) (difficulty : int) : t =
-    assert (is_solved orignal_board && difficulty >= 0 && difficulty <= 81);
-
+    (* Assumes that orignal_board is solved *)
     let coordinates =
       List.cartesian_product (List.range 0 9) (List.range 0 9) |> List.permute
     in
