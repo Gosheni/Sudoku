@@ -25,6 +25,6 @@ module Hint_system : sig
         more possibilities from the markup. This lets us run forced_moves again and get more information 
         from the board without guessing *)
   
-  val get_best_guess : t -> (int * int)
+  val get_best_guess : t -> coordinate
   (** Take a markup and return the coordinates of the cell with the fewest possible entries *)
 end

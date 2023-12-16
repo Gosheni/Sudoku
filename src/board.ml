@@ -17,8 +17,6 @@ module Sudoku_board = struct
       | Fixed a | Volatile a -> Int.to_string a
   end
 
-  type coordinate = int * int
-
   include Grid.Make_sudoku_grid (S_element)
 
   let is_valid ?(updated : coordinate option) (board : t) : bool =

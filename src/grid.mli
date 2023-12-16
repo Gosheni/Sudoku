@@ -11,7 +11,7 @@ module type Element = sig
     include Element
     type row = (int, element, Core.Int.comparator_witness) Core.Map.t
     type t = (int, row, Core.Int.comparator_witness) Core.Map.t
-    
+    type coordinate = int * int
     val equal : t -> t -> bool
     (** Compares two sudoku boards, returns true iff the two boards has the same dimension and all the elements in are equal *)
   

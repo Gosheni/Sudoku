@@ -3,7 +3,7 @@ module Sudoku_board : sig
     type element = Empty | Fixed of int | Volatile of int
   end 
 
-  type coordinate = int * int
+
   include Grid.Sudoku_grid with type element = S_element.element
   
   val is_valid : ?updated:coordinate -> t -> bool

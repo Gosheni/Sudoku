@@ -13,7 +13,7 @@ module type Sudoku_grid = sig
 
   type row = (int, element, Core.Int.comparator_witness) Core.Map.t
   type t = (int, row, Core.Int.comparator_witness) Core.Map.t
-
+  type coordinate = int * int
   val equal : t -> t -> bool
   val empty : t
   val get : t -> int -> int -> element option
@@ -36,7 +36,7 @@ module Make_sudoku_grid (E : Element) = struct
 
   type row = (int, element, Int.comparator_witness) Map.t
   type t = (int, row, Int.comparator_witness) Map.t
-
+  type coordinate = int * int
   let grid_size : int = 9
 
   let equal (b1 : t) (b2 : t) : bool =

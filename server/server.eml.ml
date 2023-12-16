@@ -339,9 +339,9 @@ let render _ =
   </html>
 
 let get_squares_to_highlight (move : Game.move)
-    (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
+    (forced_by : Hint.Hint_system.forced_source) : Hint.Hint_system.coordinate list =
   let open Hint.Hint_system in
-  let get_section_as_coordinate_list (make_coord : int -> int * int) =
+  let get_section_as_coordinate_list (make_coord : int -> coordinate) =
     List.range 0 9 |> List.map ~f:make_coord
     |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
   in
