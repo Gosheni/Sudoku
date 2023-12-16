@@ -122,6 +122,21 @@ module Configuration = struct
           { highscores = config.highscores; games = game :: new_games_list };
         load_board_from_json game
 
+  let update_name (newUsername : string) : _ =
+    let config = load_config () in
+    match config.highscores with
+    | [] -> failwith "No current highscores"
+    | hd :: tl ->
+      let updatedHighscore : highscore =
+        {
+          name = newUsername;
+          difficulty = hd.difficulty;
+          total_time = hd.total_time;
+        }
+      in
+      let newHighscoresList = updatedHighscore :: tl in
+      save_config { highscores = newHighscoresList; games = config.games }
+
   let finish_game (game : game) : (unit, string) result =
     let config = load_config () in
     match get_game_with_name game.name with
