@@ -180,44 +180,29 @@ module Hint_system = struct
 
   let update_row (possibs : t) (new_section : element list) (row_idx : int) : t
       =
-    let rec update_helper section idx acc =
-      if idx > 8 then acc
-      else
-        match section with
-        | [] -> assert false
-        | hd :: tl ->
-            let new_possibs = set acc row_idx idx hd in
-            update_helper tl (idx + 1) new_possibs
-    in
-    update_helper new_section 0 possibs
+    Map.mapi possibs ~f:(fun ~key:curr_row ~data:row ->
+      if row_idx <> curr_row then row else
+      Map.mapi row ~f:(fun ~key:curr_col ~data:_ ->
+        List.nth_exn new_section curr_col))
 
   let update_col (possibs : t) (new_section : element list) (col_idx : int) : t
       =
-    let rec update_helper section idx acc =
-      if idx > 8 then acc
-      else
-        match section with
-        | [] -> assert false
-        | hd :: tl ->
-            let new_possibs = set acc idx col_idx hd in
-            update_helper tl (idx + 1) new_possibs
-    in
-    update_helper new_section 0 possibs
+    Map.mapi possibs ~f:(fun ~key:curr_row ~data:row ->
+      Map.mapi row ~f:(fun ~key:curr_col ~data:elem ->
+        if col_idx <> curr_col then elem
+        else
+        List.nth_exn new_section curr_row))
 
   let update_block (possibs : t) (new_section : element list) (block_idx : int)
       : t =
-    let rec update_helper section idx acc =
-      if idx > 8 then acc
-      else
-        match section with
-        | [] -> assert false
-        | hd :: tl ->
-            let row_idx = (block_idx / 3 * 3) + (idx / 3) in
-            let col_idx = (block_idx mod 3 * 3) + (idx mod 3) in
-            let new_possibs = set acc row_idx col_idx hd in
-            update_helper tl (idx + 1) new_possibs
-    in
-    update_helper new_section 0 possibs
+    let row_idx = block_idx / 3 * 3 in
+    let col_idx = block_idx % 3 * 3 in
+    Map.mapi possibs ~f:(fun ~key:curr_row ~data:row ->
+      Map.mapi row ~f:(fun ~key:curr_col ~data:elem ->
+        if curr_row < row_idx || curr_row >= row_idx + 3 then elem
+        else if curr_col < col_idx || curr_col >= col_idx + 3 then elem
+        else
+        List.nth_exn new_section (curr_col - col_idx + (curr_row - row_idx) * 3)))
 
   let crooks_on_section (possibs : t) (get_section : int -> element list)
       (update_section : t -> element list -> int -> t) : t =
