@@ -517,27 +517,28 @@ let test_generate_unsolved : test =
   List.init 20 ~f:test_generate_single_unsolved |> test_list
 
 let example_board_1_incomplete = Sudoku_board.set example_board_1 0 0 Empty
-let example_move = Sudoku_game.{ x = 0; y = 0; value = Some 1 }
+let example_move = Game.{ x = 0; y = 0; value = Some 1 }
 
 let test_hint_forced_moves _ =
-  assert_equal Sudoku_game.Already_solved
-  @@ Sudoku_game.generate_hint example_board_1;
-  match Sudoku_game.generate_hint example_board_1_incomplete with
-  | Sudoku_game.Suggested_move (new_move, _) ->
-      assert_equal example_move new_move
+  assert_equal Game.Already_solved @@ Game.generate_hint example_board_1;
+  match Game.generate_hint example_board_1_incomplete with
+  | Game.Suggested_move (new_move, _) -> assert_equal example_move new_move
   | _ -> assert_failure ""
 
-let test_bad_boards _ = 
-  assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_6; (* unsolvable *)
-  assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_7 (* multiple solutions *)
+let test_bad_boards _ =
+  assert_equal None @@ Sudoku_board.solve_with_unique_solution example_board_6;
+  (* unsolvable *)
+  assert_equal None
+  @@ Sudoku_board.solve_with_unique_solution
+       example_board_7 (* multiple solutions *)
 
 let apply_hints_till_solved_or_guess board =
   let rec loop board =
-    match Sudoku_game.generate_hint ~use_crooks:true board with
-    | Sudoku_game.Suggested_move (move, _) -> (
+    match Game.generate_hint ~use_crooks:true board with
+    | Game.Suggested_move (move, _) -> (
         (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
            let _ = print_endline desc in *)
-        match Sudoku_game.do_move board move with
+        match Game.do_move board move with
         | Error _ ->
             let _ = print_endline "error happened" in
             board
@@ -550,11 +551,11 @@ let apply_hints_till_solved_or_guess board =
 
 let apply_hints_without_crooks board =
   let rec loop board =
-    match Sudoku_game.generate_hint ~use_crooks:false board with
-    | Sudoku_game.Suggested_move (move, _) -> (
+    match Game.generate_hint ~use_crooks:false board with
+    | Game.Suggested_move (move, _) -> (
         (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
             let _ = print_endline desc in *)
-        match Sudoku_game.do_move board move with
+        match Game.do_move board move with
         | Error _ ->
             let _ = print_endline "error happened" in
             board
@@ -575,7 +576,7 @@ let test_is_crooks_needed : test =
       if Sudoku_board.is_solved hints_applied then assert_bool "" true
       else
         (* tests that crooks can come up with moves after non-crooks fails *)
-        let hint = Sudoku_game.generate_hint ~use_crooks:true hints_applied in
+        let hint = Game.generate_hint ~use_crooks:true hints_applied in
         match hint with
         | Suggest_guess _ -> assert_bool "" true
         | Already_solved -> assert_bool "" false
@@ -593,17 +594,19 @@ let test_hints_and_moves _ =
   @@ apply_hints_till_solved_or_guess
        example_board_5 (* board that needs crooks to solve *)
 
-let test_io _ = 
+let test_io _ =
   let filename = "test_board_io.json" in
   let _ = Iolib.save_board_to_json filename example_board_5 in
-  assert_bool "" @@ Sudoku_board.equal example_board_5 (Iolib.load_board_from_json filename |> force_unwrap)
+  assert_bool ""
+  @@ Sudoku_board.equal example_board_5
+       (Iolib.load_board_from_json filename |> force_unwrap)
 
-let test_guess _ = 
+let test_guess _ =
   let almost_solved = apply_hints_till_solved_or_guess example_board_8 in
-  let hint = Sudoku_game.generate_hint ~use_crooks:true almost_solved in
+  let hint = Game.generate_hint ~use_crooks:true almost_solved in
   match hint with
-    | Suggest_guess _ -> assert_bool "" true
-    | _ -> assert_bool "" false
+  | Suggest_guess _ -> assert_bool "" true
+  | _ -> assert_bool "" false
 
 let series =
   "Tests"
@@ -621,7 +624,7 @@ let series =
          test_generate_unsolved;
          "test hint forced moves" >:: test_hint_forced_moves;
          "test hints till solved" >:: test_hints_and_moves;
-         "test bad boards" >:: test_bad_boards; 
+         "test bad boards" >:: test_bad_boards;
          test_is_crooks_needed;
          "test io" >:: test_io;
          "test guess needed" >:: test_guess;

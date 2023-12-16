@@ -1,5 +1,7 @@
 (executable
  (name server)
+ (public_name "Sudoku server")
+ (package server)
  (libraries
   dream
   grid

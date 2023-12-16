@@ -35,6 +35,8 @@
 
 (executable
  (name sudoku)
+ (public_name "Sudoku CLI")
+ (package cli)
  (modules sudoku)
  (libraries grid board core game iolib core_unix.command_unix)
  (preprocess

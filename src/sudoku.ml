@@ -1,6 +1,6 @@
 open Core
 open Board
-open Game.Sudoku_game
+open Game
 open Iolib
 
 let name _ = Configuration.get_name ()
