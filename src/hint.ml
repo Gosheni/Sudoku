@@ -16,17 +16,6 @@ module Hint_system = struct
 
   include Grid.Make_sudoku_grid (S_element)
 
-  let is_valid (possibs : t) : bool =
-    let check_section (get_section : int -> element list) : bool =
-      List.range 0 9
-      |> List.for_all ~f:(fun i ->
-             i |> get_section |> List.for_all ~f:element_is_valid)
-    in
-    is_valid_grid possibs
-    && (check_section @@ get_row possibs)
-    && (check_section @@ get_col possibs)
-    && (check_section @@ get_block possibs)
-
   let make_possibility_sets (board : Board.Sudoku_board.t) : t =
     (* Assumes the board satisfies Sudoku_board.is_valid *)
     let filter_by_section (section : Board.Sudoku_board.element list)
@@ -46,23 +35,11 @@ module Hint_system = struct
       |> filter_by_section (Board.Sudoku_board.get_col board col_idx)
       |> filter_by_section (Board.Sudoku_board.get_block board block_idx)
     in
-    let rec make_possib_board (possibs : t) (row_idx : int) (col_idx : int) : t
-        =
-      if col_idx > 8 then possibs
-      else if row_idx > 8 then make_possib_board possibs 0 (col_idx + 1)
-      else
-        match Board.Sudoku_board.get board row_idx col_idx with
-        | Some (Volatile _) | Some (Fixed _) ->
-            let new_possibs = set possibs row_idx col_idx [] in
-            make_possib_board new_possibs (row_idx + 1) col_idx
-        | Some Empty ->
-            let new_possibs =
-              set possibs row_idx col_idx (check_all_sections row_idx col_idx)
-            in
-            make_possib_board new_possibs (row_idx + 1) col_idx
-        | _ -> assert false
-    in
-    make_possib_board empty 0 0
+    Map.mapi board ~f:(fun ~key:row_idx ~data:row ->
+        Map.mapi row ~f:(fun ~key:col_idx ~data:element ->
+            match element with
+            | Volatile _ | Fixed _ -> []
+            | Empty -> check_all_sections row_idx col_idx))
 
   let union l1 l2 =
     List.fold l2 ~init:l1 ~f:(fun acc x ->
@@ -70,7 +47,7 @@ module Hint_system = struct
 
   type forced_source = Row | Col | Block | Single | Incorrect
 
-  let forced_source_to_string (forced_by) : string = 
+  let forced_source_to_string forced_by : string =
     match forced_by with
     | Row -> "row"
     | Col -> "col"
@@ -83,7 +60,8 @@ module Hint_system = struct
         Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
             match elem with
             | [] -> acc
-            | [ single_move ] -> ((row_idx, col_idx), single_move, Single) :: acc
+            | [ single_move ] ->
+                ((row_idx, col_idx), single_move, Single) :: acc
             | lst ->
                 (* check if more than one element in the section could possibly be x *)
                 let already_present (x : int) (section : element list) : bool =
@@ -161,11 +139,9 @@ module Hint_system = struct
                Some { possibs = elem_set; members = idxs }
              else None)
     in
-    let rec loop_sizes min max acc =
-      if min > max then acc
-      else loop_sizes (min + 1) max (acc @ check_preemptive_of_size min)
-    in
-    loop_sizes 2 8 []
+    List.range 2 9
+    |> List.map ~f:check_preemptive_of_size
+    |> List.fold ~init:[] ~f:List.append
   (* only check certain sizes of preemptive sets to save time, for now checking all of them *)
 
   let rec use_preemptive_sets (section : element list)
@@ -215,16 +191,12 @@ module Hint_system = struct
 
   let crooks_on_section (possibs : t) (get_section : int -> element list)
       (update_section : t -> element list -> int -> t) : t =
-    let rec crooks_helper (idx : int) acc =
-      if idx > 8 then acc
-      else
-        let section = get_section idx in
-        let preSet = find_preemptive_sets section in
-        let new_section = use_preemptive_sets section preSet in
-        let new_possibs = update_section acc new_section idx in
-        crooks_helper (idx + 1) new_possibs
-    in
-    crooks_helper 0 possibs
+    List.range 0 9
+    |> List.fold ~init:possibs ~f:(fun acc idx ->
+           let section = get_section idx in
+           let preSet = find_preemptive_sets section in
+           let new_section = use_preemptive_sets section preSet in
+           update_section acc new_section idx)
 
   let crooks (possibs : t) : t =
     let crooks_one_round curr =

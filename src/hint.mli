@@ -6,9 +6,6 @@ module Hint_system : sig
 
   include Grid.Sudoku_grid with type element = S_element.element
 
-  val is_valid : t -> bool
-  (** Checks that the markup only contains valid possibilities *)
-
   val make_possibility_sets : Board.Sudoku_board.t -> t
   (** Transform a sudoku board into a markup by finding all possible moves at every space on the board *)
 
