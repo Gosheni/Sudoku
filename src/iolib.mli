@@ -1,4 +1,8 @@
+type errorMessage = {title: string; message: string} [@@deriving yojson]
+
 module Configuration : sig
+  
+  
   type highscore = { name : string; difficulty : int; total_time : float }
 
   val equal_highscore : highscore -> highscore -> bool
