@@ -70,6 +70,14 @@ module Hint_system = struct
 
   type forced_source = Row | Col | Block | Single | Incorrect
 
+  let forced_source_to_string (forced_by) : string = 
+    match forced_by with
+    | Row -> "row"
+    | Col -> "col"
+    | Block -> "block"
+    | Single -> "single"
+    | Incorrect -> "incorrect"
+
   let get_forced_moves (possib : t) : (int * int * int * forced_source) list =
     Map.fold possib ~init:[] ~f:(fun ~key:row_idx ~data:row acc ->
         Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->

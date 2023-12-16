@@ -15,6 +15,9 @@ module Hint_system : sig
   type forced_source = Row | Col | Block | Single | Incorrect
   (** hints are forced moves from either a certain section, being the only option or having a mistake *)
 
+  val forced_source_to_string : forced_source -> string
+  (** function to convert forced_source to string *)
+
   val get_forced_moves : t -> (int * int * int * forced_source) list
   (** Takes a markup and returns a list of moves that are forced by the sudoku rules. Each returned move
         is of the form row, col, element, description.
