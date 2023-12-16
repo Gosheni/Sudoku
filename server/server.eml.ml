@@ -402,7 +402,10 @@ let parse_move request =
     | Some (game, game_title) -> (
         match Sudoku_game.do_move game move with
         | Ok new_board ->
-            Configuration.update_game game_title new_board;
+            (if Sudoku_board.is_solved new_board then 
+              let _ = Configuration.finish_game game_title in ()
+            else    
+              Configuration.update_game game_title new_board);
             let json =
               Sudoku_board.serialize new_board |> Yojson.Safe.to_string
             in
