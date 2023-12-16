@@ -37,14 +37,14 @@ let () =
      fun () ->
        match (String.lowercase command_string, command_args) with
        | "init", Some [ a ] ->
-           (* Default number of elements to be removed from full board: 54 *)
+           (* Default number of elements to be removed from full board: 50 *)
            let current_board =
              Sudoku_board.generate_degenerate
                (Sudoku_board.generate_random ())
-               54
+               50
            in
            save_board_to_json (a ^ ".json") current_board;
-           Configuration.add_game a 54 current_board;
+           Configuration.add_game a 50 current_board;
            Stdio.printf "Initialized a new game %s!\n" a;
            Stdio.print_endline (Sudoku_board.pretty_print current_board)
        | "init", Some [ a; b ] -> (
@@ -125,9 +125,9 @@ let () =
            Stdio.print_endline (Sudoku_board.pretty_print (get_board_exn arg))
        | ("hint" | "solve"), Some _ ->
            Stdio.print_endline
-             "Unexpected arguments provided for init, hint, or solve command"
+             "Unexpected arguments provided for hint, or solve command"
        | ("move" | "remove" | "save" | "load" | "init"), _ ->
            Stdio.print_endline
-             "Invalid arguments for move, remove, save, or load command"
+             "Invalid arguments for init, move, remove, save, or load command"
        | _ -> Stdio.print_endline "Invalid command")
   |> Command_unix.run
