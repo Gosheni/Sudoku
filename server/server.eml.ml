@@ -425,11 +425,13 @@ let parse_move request =
       apply_move { x = Int.of_string x; y = Int.of_string y; value = None }
   | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}"
 
+let get_api path = 
+  Dream.get ("/api/v1/" ^ path)
 let () =
   Dream.run @@ Dream.logger
   @@ Dream.router
        [
-         Dream.get "/api/v1/initialize" (fun request ->
+        get_api "initialize" (fun request ->
              let open Sudoku_board in
              let difficulty = 50 in
              let board =
@@ -449,6 +451,6 @@ let () =
              Dream.set_cookie response request "current.game" title;
              Lwt.return response);
          Dream.get "/" (fun _ -> Dream.html (render ()));
-         Dream.get "/api/v1/move" parse_move;
-         Dream.get "/api/v1/hint" parse_hint;
+         get_api "move" parse_move;
+         get_api "hint" parse_hint;
        ]
