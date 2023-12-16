@@ -21,6 +21,13 @@ let hint_area _ =
     </tr>
   </table>
 
+let new_game_area _ =
+  <div>
+    <button class="new-game-button" onclick="newGame(40)">New Easy</button>
+    <button class="new-game-button" onclick="newGame(50)">New Normal</button>
+    <button class="new-game-button" onclick="newGame(60)">New Hard</button>
+  </div>
+
 let table_row id = 
   <tr id="<%s id %>">
     <%s! 
@@ -99,6 +106,18 @@ let render _ =
           width: 200px;
           font-size: 15px;
         }
+        .new-game-container {
+          margin-top: 30px;
+          margin-left: 140px;
+        }  
+        .new-game-button {
+          display: inline-block;
+          background-color: #d3d3d3;
+          border-radius: 7px;
+          width: 150px; /* Adjust the width as needed */
+          font-size: 15px;
+          margin-right: 20px; /* Optional: Add some margin between buttons */
+        }
         #timer {
           text-align: center;
         }
@@ -129,6 +148,23 @@ let render _ =
             }
           })
           .then((json) => makeHint(json));
+      }
+
+      function newGame(difficulty) {
+        let reqUrl = "/api/v1/initialize?difficulty=" + difficulty;
+        fetch(reqUrl)
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+          })
+          .then((json) => {
+            startTime = new Date().getTime();
+            populateBoard(json);
+            gameFinished = false; // Reset the gameFinished flag
+          });
       }
 
       function highlightHint(squares, target) {
@@ -331,6 +367,9 @@ let render _ =
         <div class="hint-container">
           <%s! hint_area () %>
         </div>
+        <div class="new-game-container">
+          <%s! new_game_area () %>
+        </div> 
       </div>
       
     </div>
@@ -386,6 +425,20 @@ let hint_to_json (hint : Game.hint) : Yojson.Safe.t =
           ("target", target);
         ]
 
+let parse_initialize request =
+  let open Sudoku_board in
+  let difficulty = Dream.query request "difficulty"
+  |> Option.map ~f:(fun x -> int_of_string x)
+  |> Option.value ~default:50  
+  in
+  let board = generate_random () |> Fn.flip generate_degenerate difficulty in
+  let board_json: string = serialize board |> Yojson.Safe.to_string in
+  let title = List.init 20 ~f:(fun _ -> Random.int 10) |> List.map ~f: Int.to_string
+      |> List.map ~f: Char.of_string
+      |> String.of_list in
+  Configuration.add_game title difficulty board;
+  Dream.json board_json
+
 let parse_hint request =
   match get_board request with
   | None -> Dream.respond "error"
@@ -433,26 +486,8 @@ let () =
   Dream.run @@ Dream.logger
   @@ Dream.router
        [
-         get_api "initialize" (fun request ->
-             let open Sudoku_board in
-             let difficulty = 50 in
-             let board =
-               generate_random () |> Fn.flip generate_degenerate difficulty
-             in
-             let board_json : string =
-               serialize board |> Yojson.Safe.to_string
-             in
-             let title =
-               List.init 20 ~f:(fun _ -> Random.int 10)
-               |> List.map ~f:Int.to_string |> List.map ~f:Char.of_string
-               |> String.of_list
-             in
-             Configuration.add_game title difficulty board;
-             let response = Dream.response board_json in
-             Dream.add_header response "Content-Type" "application/json";
-             Dream.set_cookie response request "current.game" title;
-             Lwt.return response);
          Dream.get "/" (fun _ -> Dream.html (render ()));
+         get_api "initialize" parse_initialize;
          get_api "move" parse_move;
          get_api "hint" parse_hint;
        ]
