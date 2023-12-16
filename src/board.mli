@@ -37,7 +37,7 @@ module Sudoku_board : sig
   val solve_with_backtracking : t -> int -> (?updated:(int * int)  -> t -> bool) -> t option
   (** Solves a sudoku with backtracking requiring the solution to be unique *)
 
-  val solve_with_unique_solution : t -> t option
+  val solve_with_unique_solution : ?known_solution:t -> t -> t option
   (** Solves a sudoku with backtracking requiring the solution to be unique *)
   
   val pretty_print : t -> string

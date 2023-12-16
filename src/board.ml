@@ -133,8 +133,14 @@ module Sudoku_board = struct
     in
     if validator board then aux board all_empty [] else None
 
-  let solve_with_unique_solution (board : t) : t option =
-    match solve_with_backtracking board 0 is_valid with
+  let solve_with_unique_solution ?(known_solution : t option) (board : t) :
+      t option =
+    let initial_solution =
+      match known_solution with
+      | None -> solve_with_backtracking board 0 is_valid
+      | a -> a
+    in
+    match initial_solution with
     | None -> None
     | Some solution -> (
         let other_solution =
@@ -155,8 +161,8 @@ module Sudoku_board = struct
     | None -> assert false (* Solving an empty sudoku always succeeds *)
     | Some board -> board
 
-  let generate_degenerate (board : t) (difficulty : int) : t =
-    assert (is_solved board && difficulty >= 0 && difficulty <= 81);
+  let generate_degenerate (orignal_board : t) (difficulty : int) : t =
+    assert (is_solved orignal_board && difficulty >= 0 && difficulty <= 81);
 
     let coordinates =
       List.cartesian_product (List.range 0 9) (List.range 0 9) |> List.permute
@@ -170,12 +176,15 @@ module Sudoku_board = struct
         | [] -> board
         | (row, col) :: remaining_coordinates ->
             let new_board = set board row col Empty in
-            if Option.is_some @@ solve_with_unique_solution new_board then
-              aux new_board (to_remove - 1) remaining_coordinates
+            if
+              Option.is_some
+              @@ solve_with_unique_solution ~known_solution:orignal_board
+                   new_board
+            then aux new_board (to_remove - 1) remaining_coordinates
             else aux board to_remove remaining_coordinates
     in
 
-    aux board difficulty coordinates
+    aux orignal_board difficulty coordinates
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in
