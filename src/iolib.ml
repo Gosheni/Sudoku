@@ -4,7 +4,12 @@ open Core
 type errorMessage = { title : string; message : string } [@@deriving yojson]
 
 module Configuration = struct
-  type highscore = { name : string; difficulty : int; total_time : float }
+  type highscore = {
+    username : string option;
+    id : string;
+    difficulty : int;
+    total_time : float;
+  }
   [@@deriving equal, yojson]
 
   type highscore_list = highscore list [@@deriving equal, yojson]
@@ -94,7 +99,23 @@ module Configuration = struct
     match get_most_recent () with
     | None -> failwith "Current game not found"
     | Some a -> a
-  
+
+  let update_name_for_highscore (id : string) (new_name : string) : unit =
+    let config = load_config () in
+    let find_condition highscore =
+      String.(highscore.id = id && Option.is_none highscore.username)
+    in
+    match List.find config.highscores ~f:find_condition with
+    | Some highscore when Option.is_none highscore.username ->
+        let new_highscore = { highscore with username = Some new_name } in
+        let new_highscores =
+          new_highscore
+          :: List.filter config.highscores ~f:(fun highscore ->
+                 highscore |> find_condition |> not)
+        in
+        save_config { config with highscores = new_highscores }
+    | _ -> ()
+
   let get_highscores _ : highscore list =
     let config = load_config () in
     config.highscores
@@ -102,13 +123,12 @@ module Configuration = struct
   (* keep only best 10 scores *)
   let add_new_score (score : highscore) : highscore list =
     let config = load_config () in
-    let top_ten = 
-      List.sort (score::config.highscores) ~compare:(fun a b ->
+    let top_ten =
+      List.sort (score :: config.highscores) ~compare:(fun a b ->
           Float.compare a.total_time b.total_time)
       |> Fn.flip List.take 10
     in
-    score::top_ten
-
+    score :: top_ten
 
   let move_game_to_first game_name : Sudoku_board.t option =
     match get_game_with_name game_name with
@@ -122,21 +142,6 @@ module Configuration = struct
           { highscores = config.highscores; games = game :: new_games_list };
         load_board_from_json game
 
-  let update_name (newUsername : string) : _ =
-    let config = load_config () in
-    match config.highscores with
-    | [] -> failwith "No current highscores"
-    | hd :: tl ->
-      let updatedHighscore : highscore =
-        {
-          name = newUsername;
-          difficulty = hd.difficulty;
-          total_time = hd.total_time;
-        }
-      in
-      let newHighscoresList = updatedHighscore :: tl in
-      save_config { highscores = newHighscoresList; games = config.games }
-
   let finish_game (game : game) : (unit, string) result =
     let config = load_config () in
     match get_game_with_name game.name with
@@ -149,7 +154,8 @@ module Configuration = struct
         in
         let new_highscore : highscore =
           {
-            name = game.name;
+            id = game.name;
+            username = None;
             difficulty = game.difficulty;
             total_time = time_spent;
           }

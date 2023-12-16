@@ -106,16 +106,28 @@ let handle_command command_string command_args =
       match Configuration.move_game_to_first arg with
       | Some game -> Stdio.print_endline (Sudoku_board.pretty_print game)
       | None -> Stdio.print_endline "Unable to load game")
-  | "scores", None ->
-      (Stdio.print_endline "High scores:";
+  | "scores", None -> (
+      Stdio.print_endline "High scores:";
       let scores = Configuration.get_highscores () in
-      match scores with 
-        | [] -> Stdio.print_endline "Play some games to get some high scores"
-        | recent::rest ->
-        let _, high_scores = List.fold rest ~init:(1, "") ~f:(fun (idx, acc_str) x -> idx + 1, 
-          acc_str ^ (Int.to_string idx) ^ ". " ^ x.name ^ " Score: " ^ (Float.to_string x.total_time) ^ "\n") in
-        Stdio.print_endline high_scores;
-        Stdio.print_endline ("Most recent game: \n" ^ recent.name ^ " Score: " ^ (Float.to_string recent.total_time) ^ "\n"))
+      match scores with
+      | [] -> Stdio.print_endline "Play some games to get some high scores"
+      | recent :: rest ->
+          let _, high_scores =
+            List.fold rest ~init:(1, "") ~f:(fun (idx, acc_str) highscore ->
+                ( idx + 1,
+                  acc_str ^ Int.to_string idx ^ ". "
+                  ^ Option.value highscore.username ~default:highscore.id
+                  ^ " Score: "
+                  ^ Float.to_string highscore.total_time
+                  ^ "\n" ))
+          in
+          Stdio.print_endline high_scores;
+          Stdio.print_endline
+            ("Most recent game: \n"
+            ^ Option.value recent.username ~default:recent.id
+            ^ " Score: "
+            ^ Float.to_string recent.total_time
+            ^ "\n"))
   | ("hint" | "solve" | "scores"), Some _ ->
       Stdio.print_endline
         "Unexpected arguments provided for hint, solve or scores command"

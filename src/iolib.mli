@@ -1,7 +1,14 @@
-type errorMessage = {title: string; message: string} [@@deriving yojson]
+type errorMessage = { title : string; message : string } [@@deriving yojson]
 
 module Configuration : sig
-  type highscore = { name : string; difficulty : int; total_time : float } [@@deriving yojson]
+  type highscore = {
+    username : string option;
+    id : string;
+    difficulty : int;
+    total_time : float;
+  }
+  [@@deriving equal, yojson]
+
   type highscore_list = highscore list [@@deriving yojson]
 
   val equal_highscore : highscore -> highscore -> bool
@@ -15,8 +22,8 @@ module Configuration : sig
   val get_most_recent : unit -> (game * Board.Sudoku_board.t) option
   val get_most_recent_exn : unit -> game * Board.Sudoku_board.t
   val get_highscores : unit -> highscore list
+  val update_name_for_highscore : string -> string -> unit
   val move_game_to_first : string -> Board.Sudoku_board.t option
   val update_game : game -> Board.Sudoku_board.t -> unit
-  val update_name : string -> unit
   val finish_game : game -> (unit, string) result
 end

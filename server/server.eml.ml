@@ -726,19 +726,18 @@ let render _ =
     </body>
   </html>
 
-let create_error (title: string) (message: string) = 
-  {title; message} 
-  |> errorMessage_to_yojson 
-  |> Yojson.Safe.to_string
-  |> Dream.json ~code:405 
+let create_error (title : string) (message : string) =
+  { title; message } |> errorMessage_to_yojson |> Yojson.Safe.to_string
+  |> Dream.json ~code:405
 
-
-let get_section_as_coordinate_list (make_coord : int -> Sudoku_board.coordinate) =
+let get_section_as_coordinate_list
+    (make_coord : int -> Hint.Hint_system.coordinate) =
   List.range 0 9 |> List.map ~f:make_coord
   |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
 
 let get_primary_squares (move : move)
-    (forced_by : Hint.Hint_system.forced_source) : Sudoku_board.coordinate list =
+    (forced_by : Hint.Hint_system.forced_source) :
+    Hint.Hint_system.coordinate list =
   let open Hint.Hint_system in
   match forced_by with
   | Single | Incorrect -> [ (move.x, move.y) ]
@@ -847,10 +846,11 @@ let parse_initialize request =
     |> Option.value ~default:50
   in
   let board = generate_random () |> Fn.flip generate_degenerate difficulty in
-  let board_json: string = serialize board |> Yojson.Safe.to_string in
-  let title = List.init 20 ~f:(fun _ -> Random.int 10) |> List.map ~f: Int.to_string
-      |> List.map ~f: Char.of_string
-      |> String.of_list in
+  let board_json : string = serialize board |> Yojson.Safe.to_string in
+  let title =
+    List.init 20 ~f:(fun _ -> Random.int 10)
+    |> List.map ~f:Int.to_string |> List.map ~f:Char.of_string |> String.of_list
+  in
   let _ = Configuration.add_game title difficulty board in
   let response = Dream.response board_json in
   Dream.add_header response "Content-Type" "application/json";
@@ -859,7 +859,7 @@ let parse_initialize request =
 
 let parse_hint request =
   match get_board request with
-  | None -> Dream.respond "error"
+  | None -> create_error "No current game" ""
   | Some (_, board) ->
       let hint = Game.generate_hint ~use_crooks:true board in
       let json = hint_to_json board hint |> Yojson.Safe.to_string in
@@ -900,21 +900,17 @@ let parse_move request =
 
 let parse_submit request =
   let username =
-    Dream.query request "username"
-    |> Option.value ~default:"Default_name"
+    Dream.query request "username" |> Option.value ~default:"Default_name"
   in
-  Configuration.update_name username;
-  match get_board request with
-  | None -> Dream.respond "error"
-  | Some (_, board) ->
-    let hint = Game.generate_hint ~use_crooks:true board in
-    let json = hint_to_json board hint |> Yojson.Safe.to_string in
-    Dream.json json
+  match Dream.cookie request "current.game" with
+  | None -> create_error "No game to give a name" ""
+  | Some game_id ->
+      Configuration.update_name_for_highscore game_id username;
+      create_error "Highscore submitted" ""
 
-let parse_score _ = 
+let parse_score _ =
   Configuration.get_highscores ()
-  |> Configuration.highscore_list_to_yojson
-  |> Yojson.Safe.to_string
+  |> Configuration.highscore_list_to_yojson |> Yojson.Safe.to_string
   |> Dream.json
 
 let get_api path = Dream.get ("/api/v1/" ^ path)
@@ -922,11 +918,11 @@ let get_api path = Dream.get ("/api/v1/" ^ path)
 let () =
   Dream.run @@ Dream.logger
   @@ Dream.router
-        [
-          Dream.get "/" (fun _ -> Dream.html (render ()));
-          get_api "initialize" parse_initialize;
-          get_api "move" parse_move;
-          get_api "hint" parse_hint;
-          get_api "submit" parse_submit;
-          get_api "highscore" parse_score;
-        ]
+       [
+         Dream.get "/" (fun _ -> Dream.html (render ()));
+         get_api "initialize" parse_initialize;
+         get_api "move" parse_move;
+         get_api "hint" parse_hint;
+         get_api "submit" parse_submit;
+         get_api "highscore" parse_score;
+       ]

@@ -29,7 +29,7 @@
 (library
  (name iolib)
  (modules iolib)
- (libraries core yojson core_unix board core_unix.sys_unix)
+ (libraries core yojson core_unix board dream core_unix.sys_unix)
  (preprocess
   (pps ppx_jane ppx_deriving_yojson)))
 
