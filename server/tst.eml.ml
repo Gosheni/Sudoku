@@ -9,13 +9,6 @@ let single_cell id =
 let number_button number =
   <td class="numberButton" id="numberButton<%s number %>" onclick="numberButtonWasTapped(this)"><%s (number)%></td>
 
-let score_row rank = 
-  <tr class="score-hidden" id="score <%s rank %>" style="width: 200px;">
-  <td id="score <%s rank %> num" style="font-size: 20px; width: 30px;"><%s (rank)%>. </td>
-  <td id="score <%s rank %> name" style="font-size: 20px; width: 70px;">name</td>
-  <td id="score <%s rank %> score" style="font-size: 20px; width: 100px;">0</td>
-  </tr>
-
 let hint_area _ = 
   <table>
     <tr>
@@ -204,23 +197,6 @@ let render _ =
           width: 150px; 
           font-size: 15px; 
         }
-        .high-score-container {
-          margin-top: 30px;
-          align: left;
-          margin-left: 140px;
-        }
-        .score-hidden {
-          display: none;
-        }
-        .score {
-          display: inline-block;
-        }
-        .score-message {
-          display: inline-block;
-        }
-        .score-message-hidden {
-          display: none;
-        }
         #timer {
           text-align: center;
         }
@@ -308,7 +284,6 @@ let render _ =
         // reset hints
         resetErrorsAndHints();
         hintCalled = false;
-        updateHighScores();
         var hintText = document.getElementById("hint");
         hintText.textContent = "Press the button above if you need help";
 
@@ -572,59 +547,6 @@ let render _ =
             populateBoard(json)
           });
 
-        function updateHighScores () {
-          fetch("/api/v1/highscore")
-            .then((response) => {
-              if (response.ok) {
-                return response.json()
-              } else {
-                throw new Error(`${response.status} ${response.statusText}`);
-              }
-            })
-            .then((json) => {
-              console.log("scores");
-              console.log(json);
-              if (json.length <= 0) {
-                var scoreMessage = document.getElementsByClassName("score-message")[0];
-                if (scoreMessage.classList.contains("score-message-hidden")) {
-                  scoreMessage.classList.remove("score-message-hidden");
-                }
-              } else {
-                var scoreMessage = document.getElementsByClassName("score-message")[0];
-                scoreMessage.classList.add("score-message-hidden");
-
-                var score_recent = json[0];
-                var scoreRow = document.getElementById("score recent");
-                if (scoreRow.classList.contains("score-hidden")) {
-                  scoreRow.classList.remove("score-hidden");
-                }
-                console.log(scoreRow);
-                scoreRow.classList.add("score");
-                console.log(score_recent);
-                var scoreName = document.getElementById("score recent name");
-                scoreName.textContent = score_recent["name"];
-                var scoreScore = document.getElementById("score recent score");
-                scoreScore.textContent = score_recent["total_time"].toString();
-                for (var i = 1; i < json.length; i++) {
-                  var score = json[i];
-                  console.log(score);
-                  var scoreRow = document.getElementById("score " + i);
-                  if (scoreRow.classList.contains("score-hidden")) {
-                    scoreRow.classList.remove("score-hidden");
-                  }
-                  scoreRow.classList.add("score");
-                  var scoreName = document.getElementById("score " + i + " name");
-                  scoreName.textContent = score["name"];
-                  var scoreScore = document.getElementById("score " + i + " score");
-                  scoreScore.textContent = score["total_time"].toString();
-                }
-              }
-              
-          });
-        }
-
-        updateHighScores();
-
         document.addEventListener('keydown', function(event) {
             resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
 
@@ -706,20 +628,7 @@ let render _ =
         <div class="error-container">
           <p id="error-title"></p>
           <p id="error-message"></p>
-        </div>          <div class="high-score-container">
-          <table>
-          <tr><td style="font-size:20px; width: 200px;">Highscores</td></tr>
-            <%s! 
-            (List.range 1 5
-            |> List.map ~f: string_of_int 
-            |> List.map ~f: score_row
-            |> List.fold ~init: "" ~f: (^))
-          ^
-          (score_row "recent") %>
-          <tr class="score-message"><td style="font-size:20px; width: 200px;">
-          Play some games to record some high scores
-          </td></tr>
-          </table>
+        </div>  
       </div>
       
     </div>
@@ -907,15 +816,9 @@ let parse_submit request =
   match get_board request with
   | None -> Dream.respond "error"
   | Some (_, board) ->
-    let hint = Game.generate_hint ~use_crooks:true board in
-    let json = hint_to_json board hint |> Yojson.Safe.to_string in
-    Dream.json json
-
-let parse_score _ = 
-  Configuration.get_highscores ()
-  |> Configuration.highscore_list_to_yojson
-  |> Yojson.Safe.to_string
-  |> Dream.json
+      let hint = Game.generate_hint ~use_crooks:true board in
+      let json = hint_to_json board hint |> Yojson.Safe.to_string in
+      Dream.json json
 
 let get_api path = Dream.get ("/api/v1/" ^ path)
 
@@ -928,5 +831,6 @@ let () =
           get_api "move" parse_move;
           get_api "hint" parse_hint;
           get_api "submit" parse_submit;
-          get_api "highscore" parse_score;
         ]
+            
+            

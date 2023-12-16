@@ -17,5 +17,6 @@ module Configuration : sig
   val get_highscores : unit -> highscore list
   val move_game_to_first : string -> Board.Sudoku_board.t option
   val update_game : game -> Board.Sudoku_board.t -> unit
+  val update_name : string -> unit
   val finish_game : game -> (unit, string) result
 end

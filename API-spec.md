@@ -26,7 +26,7 @@
 
 ## Other 
 ### Submit board 
-- POST: /api/v1/submit
+- POST: /api/v1/submit?username=[String]
     The payload has to be a dictionary containing a JSON encoded board and a username. 
 - Returns: 
     - 200: An updated board in JSON format.
