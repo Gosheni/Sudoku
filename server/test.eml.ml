@@ -99,10 +99,13 @@ let render _ =
           width: 200px;
           font-size: 15px;
         }
+        #timer {
+          text-align: center;
+        }
         </style>
         <script>
       let hintCalled = false;
-      
+      let gameFinished = false;
       function changeSelectedCell(cell) {
         unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
         isHighlighted = cell.classList.contains('selected');
@@ -303,7 +306,6 @@ let render _ =
     <body>
     <div class="container">
       <div class="playarea">
-        <h1 id="timer"></h1>
         <table class="sudoku-table">
           <%s! 
           List.range 0 9
@@ -324,9 +326,13 @@ let render _ =
         </table>
         </div>
       </div>
-      <div class="hint-container">
-        <%s! hint_area () %>
+      <div class="right-container">
+        <h1 id="timer"></h1>
+        <div class="hint-container">
+          <%s! hint_area () %>
+        </div>
       </div>
+      
     </div>
     </body>
   </html>
