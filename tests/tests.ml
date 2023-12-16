@@ -595,11 +595,10 @@ let test_hints_and_moves _ =
        example_board_5 (* board that needs crooks to solve *)
 
 let test_io _ =
-  let filename = "test_board_io.json" in
-  let _ = Iolib.save_board_to_json filename example_board_5 in
-  assert_bool ""
-  @@ Sudoku_board.equal example_board_5
-       (Iolib.load_board_from_json filename |> force_unwrap)
+  let open Iolib.Configuration in
+  let game = add_game "Test_game" 0 example_board_5 in
+  let (most_recent, _) = get_most_recent_exn () in
+  assert_equal game most_recent
 
 let test_guess _ =
   let almost_solved = apply_hints_till_solved_or_guess example_board_8 in

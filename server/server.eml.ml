@@ -398,10 +398,7 @@ let get_squares_to_highlight (move : Game.move)
 let get_board request =
   match Dream.cookie request "current.game" with
   | None -> None
-  | Some game_title -> (
-      match Configuration.get_game game_title with
-      | None -> None
-      | Some game -> Some (game, game_title))
+  | Some game_title -> Configuration.get_game game_title
 
 let hint_to_json (hint : Game.hint) : Yojson.Safe.t =
   match hint with
@@ -436,14 +433,14 @@ let parse_initialize request =
   let title = List.init 20 ~f:(fun _ -> Random.int 10) |> List.map ~f: Int.to_string
       |> List.map ~f: Char.of_string
       |> String.of_list in
-  Configuration.add_game title difficulty board;
+  let _ = Configuration.add_game title difficulty board in
   Dream.json board_json
 
 let parse_hint request =
   match get_board request with
   | None -> Dream.respond "error"
-  | Some (game, _) ->
-      let hint = Game.generate_hint ~use_crooks:true game in
+  | Some (_, board) ->
+      let hint = Game.generate_hint ~use_crooks:true board in
       let json = hint_to_json hint |> Yojson.Safe.to_string in
       Dream.json json
 
@@ -451,13 +448,13 @@ let parse_move request =
   let apply_move move =
     match get_board request with
     | None -> Dream.json ~code:405 "{\"error\":\"some error\"}"
-    | Some (game, game_title) -> (
-        match Game.do_move game move with
+    | Some (game, board) -> (
+        match Game.do_move board move with
         | Ok new_board ->
             if Sudoku_board.is_solved new_board then
-              let _ = Configuration.finish_game game_title in
+              let _ = Configuration.finish_game game in
               ()
-            else Configuration.update_game game_title new_board;
+            else Configuration.update_game game new_board;
             let json =
               Sudoku_board.serialize new_board |> Yojson.Safe.to_string
             in

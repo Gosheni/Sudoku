@@ -1,22 +1,6 @@
 open Board
 open Core
 
-let save_board_to_json filename data =
-  Sudoku_board.serialize data |> Yojson.Safe.to_file filename
-
-let delete_game filename =
-  if
-    String.contains filename '/' || String.is_substring ~substring:".." filename
-  then ()
-  else
-    try Sys_unix.remove filename
-    with Sys_error msg ->
-      Stdio.eprintf "Error deleting file '%s': %s\n" filename msg
-
-let load_board_from_json filename : Sudoku_board.t option =
-  try Yojson.Safe.from_file filename |> Sudoku_board.deserialize
-  with _ -> None
-
 module Configuration = struct
   type highscore = { name : string; difficulty : int; total_time : float }
   [@@deriving equal, yojson]
@@ -35,6 +19,27 @@ module Configuration = struct
   let empty = { highscores = []; games = [] }
   let location = "sudoku.config"
 
+  let save_board_to_json game data =
+    let filename = game.file_location in
+    if String.(suffix filename 5 = ".json") && String.length filename > 5 then
+      Sudoku_board.serialize data |> Yojson.Safe.to_file filename
+    else failwith "Invalid filename"
+
+  let delete_game game =
+    let filename = game.file_location in
+    if
+      String.contains filename '/'
+      || String.is_substring ~substring:".." filename
+    then ()
+    else
+      try Sys_unix.remove filename
+      with Sys_error msg ->
+        Stdio.eprintf "Error deleting file '%s': %s\n" filename msg
+
+  let load_board_from_json game : Sudoku_board.t option =
+    try Yojson.Safe.from_file game.file_location |> Sudoku_board.deserialize
+    with _ -> None
+
   let load_config _ : t =
     try
       let possible_config = Yojson.Safe.from_file location |> of_yojson in
@@ -44,14 +49,11 @@ module Configuration = struct
   let save_config (config : t) : unit =
     to_yojson config |> Yojson.Safe.to_file location
 
-  let update = save_config
-
   let add_game (name : string) (difficulty : int) (board : Sudoku_board.t) :
-      unit =
+      game =
     let filename = (name |> String.filter ~f:Char.is_alphanum) ^ ".json" in
-    save_board_to_json filename board;
     let config = load_config () in
-    let g =
+    let game =
       {
         name;
         file_location = filename;
@@ -59,48 +61,57 @@ module Configuration = struct
         difficulty;
       }
     in
-    save_config { highscores = config.highscores; games = g :: config.games }
+    save_board_to_json game board;
+    save_config { highscores = config.highscores; games = game :: config.games };
+    game
 
   let get_game_with_name (name : string) : game option =
     let config = load_config () in
     List.find config.games ~f:(fun game -> String.(game.name = name))
 
-  let update_game (name : string) (game : Sudoku_board.t) : unit =
-    match get_game_with_name name with
+  let update_game (game : game) (board : Sudoku_board.t) : unit =
+    match get_game_with_name game.name with
     | None -> ()
-    | Some game_data -> save_board_to_json game_data.file_location game
+    | Some game_data -> save_board_to_json game_data board
 
-  let get_game (name : string) : Sudoku_board.t option =
+  let get_game (name : string) : (game * Board.Sudoku_board.t) option =
     match get_game_with_name name with
     | None -> None
-    | Some game_data -> load_board_from_json game_data.file_location
+    | Some game_data -> (
+        match load_board_from_json game_data with
+        | None -> None
+        | Some board -> Some (game_data, board))
 
-  let get_name _ =
+  let get_most_recent _ : (game * Board.Sudoku_board.t) option =
     let config = load_config () in
-    let current_game = List.hd_exn config.games in
-    current_game.name
+    List.hd config.games |> Option.bind ~f:(fun game -> get_game game.name)
 
-  let move_game_to_first filename =
-    let config = load_config () in
-    let game =
-      List.find_exn config.games ~f:(fun game ->
-          String.(game.file_location = filename))
-    in
-    let new_games_list =
-      List.filter config.games ~f:(fun g ->
-          String.(g.file_location <> filename))
-    in
-    save_config
-      { highscores = config.highscores; games = game :: new_games_list }
+  let get_most_recent_exn _ : game * Board.Sudoku_board.t =
+    match get_most_recent () with
+    | None -> failwith "Current game not found"
+    | Some a -> a
 
-  let finish_game (name : string) : (unit, string) result =
+  let move_game_to_first game_name : Sudoku_board.t option =
+    match get_game_with_name game_name with
+    | None -> None
+    | Some game ->
+        let config = load_config () in
+        let new_games_list =
+          List.filter config.games ~f:(fun g -> String.(g.name <> game_name))
+        in
+        save_config
+          { highscores = config.highscores; games = game :: new_games_list };
+        load_board_from_json game
+
+  let finish_game (game : game) : (unit, string) result =
     let config = load_config () in
-    match List.find config.games ~f:(fun game -> String.(game.name = name)) with
+    match get_game_with_name game.name with
     | None -> Error "This game does not exist"
     | Some game ->
         let time_spent = Float.(Core_unix.time () - game.start_time) in
         let new_games_list =
-          List.filter config.games ~f:(fun game -> String.(game.name <> name))
+          List.filter config.games ~f:(fun other_game ->
+              String.(other_game.name <> game.name))
         in
         let new_highscore : highscore =
           {
@@ -111,6 +122,6 @@ module Configuration = struct
         in
         let new_highscores_list = new_highscore :: config.highscores in
         save_config { highscores = new_highscores_list; games = new_games_list };
-        delete_game game.file_location;
+        delete_game game;
         Ok ()
 end
