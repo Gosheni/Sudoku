@@ -78,12 +78,12 @@ module Hint_system = struct
     | Single -> "single"
     | Incorrect -> "incorrect"
 
-  let get_forced_moves (possib : t) : (int * int * int * forced_source) list =
+  let get_forced_moves (possib : t) : (coordinate * int * forced_source) list =
     Map.fold possib ~init:[] ~f:(fun ~key:row_idx ~data:row acc ->
         Map.fold row ~init:acc ~f:(fun ~key:col_idx ~data:elem acc ->
             match elem with
             | [] -> acc
-            | [ single_move ] -> (row_idx, col_idx, single_move, Single) :: acc
+            | [ single_move ] -> ((row_idx, col_idx), single_move, Single) :: acc
             | lst ->
                 (* check if more than one element in the section could possibly be x *)
                 let already_present (x : int) (section : element list) : bool =
@@ -119,10 +119,10 @@ module Hint_system = struct
                     else Block
                   in
                   (* TODO: handle case where forced by multiple sections *)
-                  (row_idx, col_idx, forced_elem, forced_by) :: acc
+                  ((row_idx, col_idx), forced_elem, forced_by) :: acc
                 else if List.length all_unique > 1 then
                   (* multiple unique elements in same cell which is impossible *)
-                  (row_idx, col_idx, -1, Incorrect) :: acc
+                  ((row_idx, col_idx), -1, Incorrect) :: acc
                   [@coverage off]
                   (* -1 means an error exists in the current block, which is still a kind of hint*)
                 else acc))
