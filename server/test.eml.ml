@@ -181,6 +181,7 @@ let render _ =
       }
 
         function doMove(move) {
+          if (gameFinished) { return }
           let coords = getSelectedCellCoords();
           let x = coords[0];
           let y = coords[1];
@@ -228,6 +229,7 @@ let render _ =
             console.log("You have won");
             setTimeout(function() {
               clearInterval(timer);
+              gameFinished = true;
               alert("You have won!!");
             }, 500);
           }
