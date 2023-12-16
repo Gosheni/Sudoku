@@ -188,6 +188,7 @@ let render _ =
           let coords = getSelectedCellCoords();
           let x = coords[0];
           let y = coords[1];
+          if (x == None || y == None) { return }
           let baseURL = "/api/v1/move?x=" + x + "&y=" + y;
           let reqUrl = (move ==  null) ? baseURL : baseURL  + "&move="+ move ;
   
@@ -338,7 +339,7 @@ let render _ =
   </html>
 
 let get_squares_to_highlight (move : Sudoku_game.move)
-  (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
+    (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
   let open Hint.Hint_system in
   let get_section_as_coordinate_list (make_coord : int -> int * int) =
     List.range 0 9 |> List.map ~f:make_coord
@@ -374,8 +375,8 @@ let hint_to_json (hint : Sudoku_game.hint) : Yojson.Safe.t =
       let squares_as_string =
         `List
           (List.map
-            ~f:(fun (x, y) -> `List [ `Int x; `Int y ])
-            squares_to_highlight)
+             ~f:(fun (x, y) -> `List [ `Int x; `Int y ])
+             squares_to_highlight)
       in
       let desc = Sudoku_game.describe_hint hint in
       let target = `List [ `Int move.x; `Int move.y ] in
@@ -393,55 +394,66 @@ let parse_hint request =
       let hint = Sudoku_game.generate_hint ~use_crooks:true game in
       let json = hint_to_json hint |> Yojson.Safe.to_string in
       Dream.json json
-        
-      
-let parse_move request = 
-  let apply_move move = 
-      match get_board request with 
-      | None -> Dream.json ~code: 405 "{\"error\":\"some error\"}" 
-      | Some (game, game_title) -> 
-          match Sudoku_game.do_move game move with 
-          | Ok new_board ->  
-              (Configuration.update_game game_title new_board;
-              let json = Sudoku_board.serialize new_board |> Yojson.Safe.to_string in 
-              Dream.json json )
-          | _ -> Dream.json ~code: 405 "{\"error\":\"some error\"}" 
-  in 
-  (match (Dream.query request "x", Dream.query request "y", Dream.query request "move") with 
-        | Some x, Some y, Some move -> 
-          apply_move { x=Int.of_string x; y =Int.of_string y; value= Some (Int.of_string move) }
-        | Some x, Some y, None -> 
-          apply_move { x=Int.of_string x; y =Int.of_string y; value= None }
-        | _ -> 
-          Dream.json ~code: 405 "{\"error\":\"some error\"}" 
-        )  
 
+let parse_move request =
+  let apply_move move =
+    match get_board request with
+    | None -> Dream.json ~code:405 "{\"error\":\"some error\"}"
+    | Some (game, game_title) -> (
+        match Sudoku_game.do_move game move with
+        | Ok new_board ->
+            (if Sudoku_board.is_solved new_board then 
+              let _ = Configuration.finish_game game_title in ()
+            else    
+              Configuration.update_game game_title new_board);
+            let json =
+              Sudoku_board.serialize new_board |> Yojson.Safe.to_string
+            in
+            Dream.json json
+        | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}")
+  in
+  match
+    ( Dream.query request "x",
+      Dream.query request "y",
+      Dream.query request "move" )
+  with
+  | Some x, Some y, Some move ->
+      apply_move
+        {
+          x = Int.of_string x;
+          y = Int.of_string y;
+          value = Some (Int.of_string move);
+        }
+  | Some x, Some y, None ->
+      apply_move { x = Int.of_string x; y = Int.of_string y; value = None }
+  | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}"
 
-
+let get_api path = 
+  Dream.get ("/api/v1/" ^ path)
 let () =
-Dream.run
-@@ Dream.logger
-@@ Dream.router [
-  Dream.get "/api/v1/initialize" (fun request ->
-    let open Sudoku_board in 
-
-    let difficulty = 50 in 
-    let board = generate_random  () |> Fn.flip generate_degenerate difficulty in 
-    let board_json: string = serialize board |> Yojson.Safe.to_string in 
-    let title = List.init 20 ~f:(fun _ -> Random.int 10) |> List.map ~f: Int.to_string 
-        |> List.map ~f: Char.of_string 
-        |> String.of_list in 
-    Configuration.add_game title difficulty board; 
-    let response = Dream.response board_json in
-    Dream.add_header response "Content-Type" "application/json";
-    Dream.set_cookie response request "current.game" title;
-    Lwt.return response
-  );
-
-  Dream.get "/" (fun _ ->
-    Dream.html (render ()));
-
-    Dream.get "/api/v1/move" parse_move;
-
-    Dream.get "/api/v1/hint" parse_hint
-]
+  Dream.run @@ Dream.logger
+  @@ Dream.router
+       [
+        get_api "initialize" (fun request ->
+             let open Sudoku_board in
+             let difficulty = 50 in
+             let board =
+               generate_random () |> Fn.flip generate_degenerate difficulty
+             in
+             let board_json : string =
+               serialize board |> Yojson.Safe.to_string
+             in
+             let title =
+               List.init 20 ~f:(fun _ -> Random.int 10)
+               |> List.map ~f:Int.to_string |> List.map ~f:Char.of_string
+               |> String.of_list
+             in
+             Configuration.add_game title difficulty board;
+             let response = Dream.response board_json in
+             Dream.add_header response "Content-Type" "application/json";
+             Dream.set_cookie response request "current.game" title;
+             Lwt.return response);
+         Dream.get "/" (fun _ -> Dream.html (render ()));
+         get_api "move" parse_move;
+         get_api "hint" parse_hint;
+       ]

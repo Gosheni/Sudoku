@@ -17,9 +17,11 @@ module Sudoku_board = struct
       | Fixed a | Volatile a -> Int.to_string a
   end
 
+  type coordinate = int * int
+
   include Grid.Make_sudoku_grid (S_element)
 
-  let is_valid ?(updated : (int * int) option) (board : t) : bool =
+  let is_valid ?(updated : coordinate option) (board : t) : bool =
     let lst_does_not_contain_non_empty_duplicates (lst : element list) =
       List.filter_map lst ~f:(function
         | Empty -> None
@@ -69,9 +71,9 @@ module Sudoku_board = struct
     aux [] seed 9 |> List.rev
 
   let solve_with_backtracking (board : t) (seed : int)
-      (validator : ?updated:int * int -> t -> bool) : t option =
+      (validator : ?updated:coordinate -> t -> bool) : t option =
     (* Optimizations: Is valid for the updates doesn't need to check keys and that all values are in the range 1...9. Perhpas replace set/set_forced with set and set_opt where set_opt runs is_valid ~updated and returns a None is there is any problem. set_opt would be in board.ml/i *)
-    let all_empty : (int * int) list =
+    let all_empty : coordinate list =
       Map.to_alist board
       |> List.map ~f:(Tuple2.map_snd ~f:Map.to_alist)
       |> List.map ~f:(fun (row_num, row) ->
@@ -97,9 +99,9 @@ module Sudoku_board = struct
       match order_array.(a - 1) with None -> Empty | Some a -> Fixed a
     in
 
-    let rec backtrack (board : t) (empty : (int * int) list)
-        (added_to : (int * int) list) :
-        (t * (int * int) list * (int * int) list) option =
+    let rec backtrack (board : t) (empty : coordinate list)
+        (added_to : coordinate list) :
+        (t * coordinate list * coordinate list) option =
       match added_to with
       | [] ->
           None (* Unable to backtrack anymore, i.e. the sudoku is unsolvable *)
@@ -117,8 +119,8 @@ module Sudoku_board = struct
           | _ -> assert false)
     in
 
-    let rec aux (board : t) (empty : (int * int) list)
-        (added_to : (int * int) list) : t option =
+    let rec aux (board : t) (empty : coordinate list)
+        (added_to : coordinate list) : t option =
       match empty with
       | [] -> Some board
       | (x, y) :: tl -> (
@@ -133,13 +135,19 @@ module Sudoku_board = struct
     in
     if validator board then aux board all_empty [] else None
 
-  let solve_with_unique_solution (board : t) : t option =
-    match solve_with_backtracking board 0 is_valid with
+  let solve_with_unique_solution ?(known_solution : t option) (board : t) :
+      t option =
+    let initial_solution =
+      match known_solution with
+      | None -> solve_with_backtracking board 0 is_valid
+      | a -> a
+    in
+    match initial_solution with
     | None -> None
     | Some solution -> (
         let other_solution =
           solve_with_backtracking board 0
-            (fun ?(updated : (int * int) option) board ->
+            (fun ?(updated : coordinate option) board ->
               match updated with
               | None -> is_valid board && equal solution board |> not
               | Some coordinate ->
@@ -155,27 +163,30 @@ module Sudoku_board = struct
     | None -> assert false (* Solving an empty sudoku always succeeds *)
     | Some board -> board
 
-  let generate_degenerate (board : t) (difficulty : int) : t =
-    assert (is_solved board && difficulty >= 0 && difficulty <= 81);
+  let generate_degenerate (orignal_board : t) (difficulty : int) : t =
+    assert (is_solved orignal_board && difficulty >= 0 && difficulty <= 81);
 
     let coordinates =
       List.cartesian_product (List.range 0 9) (List.range 0 9) |> List.permute
     in
 
     let rec aux (board : t) (to_remove : int)
-        (possible_coordinates : (int * int) list) : t =
+        (possible_coordinates : coordinate list) : t =
       if to_remove <= 0 then board
       else
         match possible_coordinates with
         | [] -> board
         | (row, col) :: remaining_coordinates ->
             let new_board = set board row col Empty in
-            if Option.is_some @@ solve_with_unique_solution new_board then
-              aux new_board (to_remove - 1) remaining_coordinates
+            if
+              Option.is_some
+              @@ solve_with_unique_solution ~known_solution:orignal_board
+                   new_board
+            then aux new_board (to_remove - 1) remaining_coordinates
             else aux board to_remove remaining_coordinates
     in
 
-    aux board difficulty coordinates
+    aux orignal_board difficulty coordinates
 
   let pretty_print (board : t) : string =
     let left_spacing : string = "  " in

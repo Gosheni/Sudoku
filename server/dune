@@ -1,11 +1,20 @@
-
-
 (executable
  (name server)
- (libraries dream grid board hint core game yojson iolib core_unix.command_unix)
- (preprocess (pps ppx_jane lwt_ppx)))
+ (libraries
+  dream
+  grid
+  board
+  hint
+  core
+  game
+  yojson
+  iolib
+  core_unix.command_unix)
+ (preprocess
+  (pps ppx_jane lwt_ppx)))
 
 (rule
  (targets server.ml)
  (deps server.eml.ml)
- (action (run dream_eml %{deps} --workspace %{workspace_root})))
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))
