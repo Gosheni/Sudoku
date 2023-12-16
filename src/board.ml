@@ -17,9 +17,11 @@ module Sudoku_board = struct
       | Fixed a | Volatile a -> Int.to_string a
   end
 
+  type coordinate = int * int
+
   include Grid.Make_sudoku_grid (S_element)
 
-  let is_valid ?(updated : (int * int) option) (board : t) : bool =
+  let is_valid ?(updated : coordinate option) (board : t) : bool =
     let lst_does_not_contain_non_empty_duplicates (lst : element list) =
       List.filter_map lst ~f:(function
         | Empty -> None
@@ -69,9 +71,9 @@ module Sudoku_board = struct
     aux [] seed 9 |> List.rev
 
   let solve_with_backtracking (board : t) (seed : int)
-      (validator : ?updated:int * int -> t -> bool) : t option =
+      (validator : ?updated:coordinate -> t -> bool) : t option =
     (* Optimizations: Is valid for the updates doesn't need to check keys and that all values are in the range 1...9. Perhpas replace set/set_forced with set and set_opt where set_opt runs is_valid ~updated and returns a None is there is any problem. set_opt would be in board.ml/i *)
-    let all_empty : (int * int) list =
+    let all_empty : coordinate list =
       Map.to_alist board
       |> List.map ~f:(Tuple2.map_snd ~f:Map.to_alist)
       |> List.map ~f:(fun (row_num, row) ->
@@ -97,9 +99,9 @@ module Sudoku_board = struct
       match order_array.(a - 1) with None -> Empty | Some a -> Fixed a
     in
 
-    let rec backtrack (board : t) (empty : (int * int) list)
-        (added_to : (int * int) list) :
-        (t * (int * int) list * (int * int) list) option =
+    let rec backtrack (board : t) (empty : coordinate list)
+        (added_to : coordinate list) :
+        (t * coordinate list * coordinate list) option =
       match added_to with
       | [] ->
           None (* Unable to backtrack anymore, i.e. the sudoku is unsolvable *)
@@ -117,8 +119,8 @@ module Sudoku_board = struct
           | _ -> assert false)
     in
 
-    let rec aux (board : t) (empty : (int * int) list)
-        (added_to : (int * int) list) : t option =
+    let rec aux (board : t) (empty : coordinate list)
+        (added_to : coordinate list) : t option =
       match empty with
       | [] -> Some board
       | (x, y) :: tl -> (
@@ -145,7 +147,7 @@ module Sudoku_board = struct
     | Some solution -> (
         let other_solution =
           solve_with_backtracking board 0
-            (fun ?(updated : (int * int) option) board ->
+            (fun ?(updated : coordinate option) board ->
               match updated with
               | None -> is_valid board && equal solution board |> not
               | Some coordinate ->
@@ -169,7 +171,7 @@ module Sudoku_board = struct
     in
 
     let rec aux (board : t) (to_remove : int)
-        (possible_coordinates : (int * int) list) : t =
+        (possible_coordinates : coordinate list) : t =
       if to_remove <= 0 then board
       else
         match possible_coordinates with

@@ -1,25 +1,12 @@
-(*module Hint_system = struct 
-	module Element: Grid = struct 
-		type element = int list
-		let empty_element: element = []
-	include Sudoku_grid(Element)
-
-	let generate_hints (board: Sudoku_board.t): t = 
-		get 
-
-end 
-*)
-
-
-
 module Sudoku_board : sig
   module S_element: sig
     type element = Empty | Fixed of int | Volatile of int
   end 
 
+  type coordinate = int * int
   include Grid.Sudoku_grid with type element = S_element.element
   
-  val is_valid : ?updated:(int * int) -> t -> bool
+  val is_valid : ?updated:coordinate -> t -> bool
   (** Checks that the board does not violate any sudoku rules, but could have empty values *)
   val is_solved : t -> bool
   (** Checks that the board is solved i.e. does not violate any sudoku rules and all cells are non-empty *)
@@ -34,7 +21,7 @@ module Sudoku_board : sig
   (** Returns a list containing the numbers 1 through 9 exactly once. The order of the elements depend on the seed 
       This is a helper function for backtracking that is exposed to allow testing *)
 
-  val solve_with_backtracking : t -> int -> (?updated:(int * int)  -> t -> bool) -> t option
+  val solve_with_backtracking : t -> int -> (?updated:coordinate  -> t -> bool) -> t option
   (** Solves a sudoku with backtracking requiring the solution to be unique *)
 
   val solve_with_unique_solution : ?known_solution:t -> t -> t option
