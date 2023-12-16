@@ -5,6 +5,12 @@ open Iolib
 
 exception NotIntError of string
 exception OutsideOfRangeError of (int * int)
+exception NoRecentGame
+
+let get_most_recent_exn _ : Configuration.game * Board.Sudoku_board.t =
+  match Configuration.get_most_recent () with
+  | None -> raise NoRecentGame
+  | Some a -> a
 
 let get_int_in_range_or_exn (str : string) (min : int) (max : int) : int =
   match int_of_string_opt str with
@@ -21,6 +27,9 @@ let handle_exn (e : exn) : unit =
   | OutsideOfRangeError (min, max) ->
       Stdio.printf
         "Invalid arguments for command: Values out of range (%d-%d)\n" min max
+  | NoRecentGame ->
+      Stdio.printf
+        "There is no recent game. You can create one with the init command\n"
   | _ -> Stdio.print_endline "An unknown error occured"
 
 let make_move (game : Configuration.game) (v : int option) r c =
@@ -63,12 +72,12 @@ let handle_command command_string command_args =
       let difficulty = get_int_in_range_or_exn a 1 70 in
       init_with b difficulty
   | "hint", None ->
-      let _, current_board = Configuration.get_most_recent_exn () in
+      let _, current_board = get_most_recent_exn () in
       let hint = generate_hint ~use_crooks:true current_board in
       Stdio.print_endline @@ describe_hint hint;
       Stdio.print_endline (Sudoku_board.pretty_print current_board)
   | "solve", None -> (
-      let metadata, current_board = Configuration.get_most_recent_exn () in
+      let metadata, current_board = get_most_recent_exn () in
       match Sudoku_board.solve_with_unique_solution current_board with
       | Some board -> (
           Stdio.print_endline "Solved the Sudoku game!";
@@ -79,7 +88,7 @@ let handle_command command_string command_args =
       | None ->
           Stdio.print_endline "This board does not have a unique solution!")
   | "move", Some [ a; b; c ] ->
-      let metadata, _ = Configuration.get_most_recent_exn () in
+      let metadata, _ = get_most_recent_exn () in
       let value = get_int_in_range_or_exn a 1 9 in
       let row = get_int_in_range_or_exn b 1 9 in
       let col = get_int_in_range_or_exn c 1 9 in
@@ -87,7 +96,7 @@ let handle_command command_string command_args =
         col;
       make_move metadata (Some value) row col
   | "remove", Some [ a; b ] ->
-      let metadata, _ = Configuration.get_most_recent_exn () in
+      let metadata, _ = get_most_recent_exn () in
       let row = get_int_in_range_or_exn a 1 9 in
       let col = get_int_in_range_or_exn b 1 9 in
       Stdio.printf "Removing a value from row %d col %d\n" row col;

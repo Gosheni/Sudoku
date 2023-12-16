@@ -35,6 +35,12 @@ let new_game_area _ =
     <button class="new-game-button" onclick="newGame(60)">New Hard</button>
   </div>
 
+let pause_area _ =
+  <div>
+    <button class="pause-button" onclick="pauseGame(this)">Pause</button>
+    <button class="resume-button" style="display:none" onclick="resumeGame(this)">Resume</button>
+  </div>
+
 let table_row id = 
   <tr id="<%s id %>">
     <%s! 
@@ -114,6 +120,11 @@ let render _ =
           display: flex;
           flex-direction: column;
         }
+        .pause-msg {
+          font-size: 20px;
+          padding: 10px;
+          position: relative;
+        }
         .hint-container {
           margin-left: 30px;
         }  
@@ -175,6 +186,24 @@ let render _ =
           font-size: 15px;
           margin-right: 20px; /* Optional: Add some margin between buttons */
         }
+        .pause-container {
+          margin-top: 30px;
+          margin-left: 140px;
+        }  
+        .pause-button {
+          display: inline-block;
+          background-color: #ff0000;
+          border-radius: 7px;
+          width: 150px; 
+          font-size: 15px;
+        }
+        .resume-button {
+          display: inline-block;
+          background-color: #00ff00;
+          border-radius: 7px;
+          width: 150px; 
+          font-size: 15px; 
+        }
         .high-score-container {
           margin-top: 30px;
           align: left;
@@ -199,8 +228,21 @@ let render _ =
         <script>
       let hintCalled = false;
       let gameFinished = false;
+
+      let pauseTime = 0;
+      function handleError(response) {
+        response.json()
+        .then((json) => 
+          {
+            document.getElementById("error-title").innerHTML = json.title;
+            document.getElementById("error-message").innerHTML = json.message;
+            throw new Error(`${response.status} ${response.statusText}`);
+         }
+        );
+        
+      }
       function changeSelectedCell(cell) {
-        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
+        resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
         isHighlighted = cell.classList.contains('selected');
         if (!isHighlighted) {
           var cells = document.getElementsByClassName("cell");
@@ -218,15 +260,53 @@ let render _ =
             if (response.ok) {
               return response.json();
             } else {
-              throw new Error(`${response.status} ${response.statusText}`);
+              handleError(response)
             }
           })
           .then((json) => makeHint(json));
       }
 
+      function pauseGame(button) {
+        resetErrorsAndHints();
+        
+        let pause = document.getElementsByClassName("pause-button")[0];
+        let resume = document.getElementsByClassName("resume-button")[0];
+        pause.style.display = "none";
+        resume.style.display = "block";
+
+        clearInterval(timer);
+
+        pauseTime = new Date().getTime();
+
+        let board = document.getElementsByClassName("sudoku-table")[0];
+        let msg = document.getElementsByClassName("pause-msg")[0];
+        board.style.display = "none";
+        msg.style.display = "flex";
+      }
+      
+      function resumeGame(button) {
+        resetErrorsAndHints();
+
+        let pause = document.getElementsByClassName("pause-button")[0];
+        let resume = document.getElementsByClassName("resume-button")[0];
+        resume.style.display = "none";
+        pause.style.display = "block";
+
+        let now = new Date().getTime();
+        elapsedTime += (now - pauseTime);
+        timer = setInterval(updateTimer, 100);
+
+        let board = document.getElementsByClassName("sudoku-table")[0];
+        let msg = document.getElementsByClassName("pause-msg")[0];
+        board.style.display = "flex";
+        msg.style.display = "none";
+
+        pauseTime = 0
+      }
+
       function newGame(difficulty) {
         // reset hints
-        unhighlightCells();
+        resetErrorsAndHints();
         hintCalled = false;
         updateHighScores();
         var hintText = document.getElementById("hint");
@@ -238,7 +318,7 @@ let render _ =
             if (response.ok) {
               return response.json();
             } else {
-              throw new Error(`${response.status} ${response.statusText}`);
+              handleError(response)
             }
           })
           .then((json) => {
@@ -249,7 +329,7 @@ let render _ =
       }
 
       function highlightHint(squares, secondary, target, elem, forced_by) {
-        unhighlightCells(); // in case two hints are asked for in a row
+        resetErrorsAndHints(); // in case two hints are asked for in a row
         hintCalled = true;
         var key = document.getElementsByClassName("hint-key");
         key[0].style.display = "flex";
@@ -317,7 +397,10 @@ let render _ =
         targetCell.classList.remove("secondary-hint");
       }
 
-      function unhighlightCells() {
+      function resetErrorsAndHints() {
+        document.getElementById("error-title").innerHTML = "";
+        document.getElementById("error-message").innerHTML = "";
+
         if (hintCalled) {
           var key = document.getElementsByClassName("hint-key");
           key[0].style.display = "none";
@@ -367,7 +450,7 @@ let render _ =
       }
 
       function numberButtonWasTapped(button) {
-        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
+        resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
         let move = button.textContent == "X" ? null : button.textContent; 
         doMove(move)
       }
@@ -382,6 +465,7 @@ let render _ =
 
         function doMove(move) {
           if (gameFinished) { return }
+          if (pauseTime != 0) { return }
           let coords = getSelectedCellCoords();
           console.log("now here");
           console.log(coords);
@@ -396,7 +480,7 @@ let render _ =
               if (response.ok) {
                 return response.json()
               } else {
-                throw new Error(`${response.status} ${response.statusText}`);
+                handleError(response)
               }
             })
             .then((json) => populateBoard(json));
@@ -430,19 +514,23 @@ let render _ =
           }
           if (!hasSeenEmpty) {
             console.log("You have won");
+            clearInterval(timer);
+            gameFinished = true;
             setTimeout(function() {
-              clearInterval(timer);
-              gameFinished = true;
-              alert("You have won!!");
+              var playerName = prompt("Congratulations! You've won! Enter your name:");
+              if (playerName) {
+                console.log("Player's name:", playerName);
+              }
             }, 500);
           }
 
         }
 
+        let elapsedTime = 0;
         function updateTimer() {
           // Inspired by https://www.w3schools.com/howto/howto_js_countdown.asp
           let now = new Date().getTime();
-          var distance = now - startTime;
+          var distance = now - startTime - elapsedTime;
 
           let days = Math.floor(distance / (1000 * 60 * 60 * 24));
           let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -461,6 +549,7 @@ let render _ =
             if (response.ok) {
               return response.json()
             } else {
+              handleError(response)
               throw new Error(`${response.status} ${response.statusText}`);
             }
           })
@@ -523,7 +612,7 @@ let render _ =
         updateHighScores();
 
         document.addEventListener('keydown', function(event) {
-            unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
+            resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
 
             let coords = getSelectedCellCoords();
             let row = parseInt(coords[0]);
@@ -558,6 +647,7 @@ let render _ =
     <body>
     <div class="container">
       <div class="playarea">
+        <div class="pause-msg" style="display:none">Game paused</div>
         <table class="sudoku-table">
           <%s! 
           List.range 0 9
@@ -596,7 +686,13 @@ let render _ =
         <div class="new-game-container">
           <%s! new_game_area () %>
         </div> 
-        <div class="high-score-container">
+        <div class="pause-container">
+          <%s! pause_area () %>
+        </div>
+        <div class="error-container">
+          <p id="error-title"></p>
+          <p id="error-message"></p>
+        </div>          <div class="high-score-container">
           <table>
           <tr><td style="font-size:20px; width: 200px;">Highscores</td></tr>
             <%s! 
@@ -615,6 +711,13 @@ let render _ =
     </div>
     </body>
   </html>
+
+let create_error (title: string) (message: string) = 
+  {title; message} 
+  |> errorMessage_to_yojson 
+  |> Yojson.Safe.to_string
+  |> Dream.json ~code:405 
+
 
 let get_section_as_coordinate_list (make_coord : int -> Sudoku_board.coordinate) =
   List.range 0 9 |> List.map ~f:make_coord
@@ -751,7 +854,7 @@ let parse_hint request =
 let parse_move request =
   let apply_move move =
     match get_board request with
-    | None -> Dream.json ~code:405 "{\"error\":\"some error\"}"
+    | None -> create_error "No current game" ""
     | Some (game, board) -> (
         match Game.do_move board move with
         | Ok new_board ->
@@ -763,7 +866,7 @@ let parse_move request =
               Sudoku_board.serialize new_board |> Yojson.Safe.to_string
             in
             Dream.json json
-        | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}")
+        | _ -> create_error "Invalid move" "")
   in
   match
     ( Dream.query request "x",
@@ -779,7 +882,13 @@ let parse_move request =
         }
   | Some x, Some y, None ->
       apply_move { x = Int.of_string x; y = Int.of_string y; value = None }
-  | _ -> Dream.json ~code:405 "{\"error\":\"some error\"}"
+  | _ -> create_error "Invalid parameters" ""
+
+let parse_score _ = 
+  Configuration.get_highscores ()
+  |> Configuration.highscore_list_to_yojson
+  |> Yojson.Safe.to_string
+  |> Dream.json
 
 let parse_score _ = 
   Configuration.get_highscores ()

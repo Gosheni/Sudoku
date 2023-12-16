@@ -1,6 +1,8 @@
 open Board
 open Core
 
+type errorMessage = { title : string; message : string } [@@deriving yojson]
+
 module Configuration = struct
   type highscore = { name : string; difficulty : int; total_time : float }
   [@@deriving equal, yojson]
