@@ -19,7 +19,7 @@ module Sudoku_game = struct
     let open Sudoku_board in
     match (get board move.x move.y, move.value) with
     | None, _ ->
-        assert false
+        Error Invalid_position
         (* Either the board is not the expected 9 x 9 grid or an invalid position was used *)
     | Some (Fixed _), _ -> Error Fixed_cell
     | Some Empty, None -> Error Already_present
@@ -46,35 +46,35 @@ module Sudoku_game = struct
     let new_move = { x = best_row; y = best_col; value = None } in
     Suggest_guess (new_move, desc)
 
-  (* probably can delete this function, no longer used 
-  
-  let make_full_desc (desc: string ) (elem : int) (x : int) (y : int)
-       (removed : int list) : string =
-     let removed =
-       if List.length removed = 0 then "This "
-       else
-         List.to_string removed ~f:Int.to_string
-         ^ " can't appear in this cell because they were required in other \
-             cells. Therefore, this"
-     in
-     let intro = "cell must be " ^ Int.to_string elem ^ " because " in
-     let desc =
-       match desc with
-       | "singleton" -> "it is the only possible value for this cell"
-       | "row" ->
-           "it is the only possible appearance of " ^ Int.to_string elem
-           ^ " in row "
-           ^ Int.to_string (x + 1)
-       | "col" ->
-           "it is the only possible appearance of " ^ Int.to_string elem
-           ^ " in column "
-           ^ Int.to_string (y + 1)
-       | "block" ->
-           "it is the only possible appearance of " ^ Int.to_string elem
-           ^ " in its 3x3 block"
-       | other -> other
-     in
-     removed ^ intro ^ desc *)
+  (* probably can delete this function, no longer used
+
+     let make_full_desc (desc: string ) (elem : int) (x : int) (y : int)
+          (removed : int list) : string =
+        let removed =
+          if List.length removed = 0 then "This "
+          else
+            List.to_string removed ~f:Int.to_string
+            ^ " can't appear in this cell because they were required in other \
+                cells. Therefore, this"
+        in
+        let intro = "cell must be " ^ Int.to_string elem ^ " because " in
+        let desc =
+          match desc with
+          | "singleton" -> "it is the only possible value for this cell"
+          | "row" ->
+              "it is the only possible appearance of " ^ Int.to_string elem
+              ^ " in row "
+              ^ Int.to_string (x + 1)
+          | "col" ->
+              "it is the only possible appearance of " ^ Int.to_string elem
+              ^ " in column "
+              ^ Int.to_string (y + 1)
+          | "block" ->
+              "it is the only possible appearance of " ^ Int.to_string elem
+              ^ " in its 3x3 block"
+          | other -> other
+        in
+        removed ^ intro ^ desc *)
 
   let describe_hint (generated_hint : hint) : string =
     match generated_hint with
