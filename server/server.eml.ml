@@ -80,9 +80,27 @@ let render _ =
         .darkened {
           background-color: #3d3d3d;
         }
+        .secondary-hint {
+          background-color: #aeaeae;
+        }
+        .highlight-elem {
+          color: #FF0000;
+        }
+        .outline-top {
+          border-top: 5px solid #0000ff !important;
+        }
+        .outline-bottom {
+          border-bottom: 5px solid #0000ff !important;
+        }
+        .outline-left {
+          border-left: 5px solid #0000ff !important;
+        }
+        .outline-right {
+          border-right: 5px solid #0000ff !important;
+        }
+
         .main-hint {
-          background-color: #d3d3d3;
-          border: 5px solid grey;
+          background-color: #ffffff;
         }
         .playarea {
           display: flex;
@@ -97,6 +115,37 @@ let render _ =
           height: 100px;
           padding: 10px;
           position: relative;
+        }
+        .hint-key-blue {
+          margin-top: 17px;
+          border: 3px solid #0000ff;
+          background-color: #ffffff;
+          width: 20px;
+          height: 20px;
+        }
+        .hint-key-black {
+          margin-top: 17px;
+          background-color: #3d3d3d;
+          width: 20px;
+          height: 20px;
+        }
+        .hint-key-red {
+          margin-top: 17px;
+          background-color: #cecece;
+          color: #FF0000;
+          width: 20px;
+          height: 20px;
+          padding-left: 5px;
+        }
+        .hint-key {
+          margin-top: 10px;
+          display: flex;
+          flex-direction: row;
+        }
+        .hint-key-subsection {
+          display: flex;
+          flex-direction: row;
+          margin-left: 10px;
         }
         .hint-button{
           align: center;
@@ -151,6 +200,7 @@ let render _ =
       }
 
       function newGame(difficulty) {
+        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
         let reqUrl = "/api/v1/initialize?difficulty=" + difficulty;
         fetch(reqUrl)
           .then((response) => {
@@ -167,10 +217,12 @@ let render _ =
           });
       }
 
-      function highlightHint(squares, target) {
+      function highlightHint(squares, secondary, target, elem, forced_by) {
         unhighlightCells(); // in case two hints are asked for in a row
         hintCalled = true;
         var cells = document.getElementsByClassName("cell");
+        console.log(secondary[0]);
+        console.log(target[0]);
         for (var i = 0; i < cells.length; i++) {
           cells.item(i).classList.add("darkened");
         }
@@ -179,19 +231,79 @@ let render _ =
           var x = square[0];
           var y = square[1];
           var cell = document.getElementById(x.toString() + y.toString());
-          cell.classList.remove("darkened");
+          console.log(forced_by);
+          if (forced_by === "row") {
+            if (i == 0) {
+              cell.classList.add("outline-right");
+            } else if (i == squares.length - 1) {
+              cell.classList.add("outline-left");
+            }
+            cell.classList.add("outline-top");
+            cell.classList.add("outline-bottom");
+          }
+          if (forced_by === "col") {
+            if (i == 0) {
+              cell.classList.add("outline-bottom");
+            } else if (i == squares.length - 1) {
+              cell.classList.add("outline-top");
+            }
+            cell.classList.add("outline-left");
+            cell.classList.add("outline-right");
+          }
+          if (forced_by === "block") {
+            if (i < 3) {
+              cell.classList.add("outline-bottom");
+            } else if (i >= 6) {
+              cell.classList.add("outline-top");
+            } 
+            if (i % 3 == 0) {
+              cell.classList.add("outline-right");
+            } else if (i % 3 == 2) {
+              cell.classList.add("outline-left");
+            }
+          }
+        }
+        for (var i = 0; i < secondary.length; i++) {
+          var square = secondary[i];
+          var x = square[0];
+          var y = square[1];
+          var cell = document.getElementById(x.toString() + y.toString());
+          cell.classList.add("secondary-hint");
+          if (cell.textContent === elem.toString()) {
+            cell.classList.add("highlight-elem");
+          }
         }
         var targetCell = document.getElementById(target[0].toString() + target[1].toString());
         targetCell.classList.add("main-hint");
+        targetCell.classList.remove("secondary-hint");
       }
 
       function unhighlightCells() {
         if (hintCalled) {
           var cells = document.getElementsByClassName("cell");
           for (var i = 0; i < cells.length; i++) {
-            cells.item(i).classList.remove("darkened");
-            if (cells.item(i).classList.contains("main-hint")) {
-              cells.item(i).classList.remove("main-hint");
+            var cell = cells.item(i);
+            cell.classList.remove("darkened");
+            if (cell.classList.contains("main-hint")) {
+              cell.classList.remove("main-hint");
+            }
+            if (cell.classList.contains("secondary-hint")) {
+              cell.classList.remove("secondary-hint");
+            }
+            if (cell.classList.contains("highlight-elem")) {
+              cell.classList.remove("highlight-elem");
+            }
+            if (cell.classList.contains("outline-top")) {
+              cell.classList.remove("outline-top");
+            }
+            if (cell.classList.contains("outline-bottom")) {
+              cell.classList.remove("outline-bottom");
+            }
+            if (cell.classList.contains("outline-left")) {
+              cell.classList.remove("outline-left");
+            }
+            if (cell.classList.contains("outline-right")) {
+              cell.classList.remove("outline-right");
             }
           }
           hintCalled = false;
@@ -199,10 +311,16 @@ let render _ =
       }
 
       function makeHint(json) {
+        console.log(json);
         var hint = json["hint"];
-        var squares = json["squares"];
-        var target = json["target"];
-        highlightHint(squares, target);
+        if (json["squares"] !== undefined){
+          var squares = json["squares"];
+          var secondary = json["secondary_squares"];
+          var target = json["target_coord"];
+          var elem = json["target_elem"];
+          var forced_by = json["forced_by"];
+          highlightHint(squares, secondary, target, elem, forced_by);
+        }
         var hintText = document.getElementById("hint");
         hintText.textContent = hint;
       }
@@ -214,7 +332,9 @@ let render _ =
       }
 
       function getSelectedCellCoords() {
+        console.log("here");
         let selected = document.getElementsByClassName('selected')[0];
+        console.log(selected.id.split(''));
         let coords = selected.id.split('');
         return coords
       }
@@ -222,6 +342,8 @@ let render _ =
         function doMove(move) {
           if (gameFinished) { return }
           let coords = getSelectedCellCoords();
+          console.log("now here");
+          console.log(coords);
           let x = coords[0];
           let y = coords[1];
           if (!x || !y) { return }
@@ -366,23 +488,34 @@ let render _ =
         <h1 id="timer"></h1>
         <div class="hint-container">
           <%s! hint_area () %>
+          <div class="hint-key">
+            <div class="hint-key-subsection">
+            <div class="hint-key-blue"></div>
+            <p>&nbsp Relevant section   </p></div>
+            <div class="hint-key-subsection">
+            <div class="hint-key-black"></div>
+            <p>&nbsp    Not Important  </p></div>
+            <div class="hint-key-subsection">
+            <div class="hint-key-red">2</div>
+            <p>&nbsp    Can't be here because of conflict  </p></div>
         </div>
         <div class="new-game-container">
           <%s! new_game_area () %>
         </div> 
+
       </div>
       
     </div>
     </body>
   </html>
 
-let get_squares_to_highlight (move : Game.move)
-    (forced_by : Hint.Hint_system.forced_source) : Hint.Hint_system.coordinate list =
+let get_section_as_coordinate_list (make_coord : int -> int * int) =
+  List.range 0 9 |> List.map ~f:make_coord
+  |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
+
+let get_primary_squares (move : move)
+  (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
   let open Hint.Hint_system in
-  let get_section_as_coordinate_list (make_coord : int -> coordinate) =
-    List.range 0 9 |> List.map ~f:make_coord
-    |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
-  in
   match forced_by with
   | Single | Incorrect -> [ (move.x, move.y) ]
   | Row -> get_section_as_coordinate_list (fun y -> (move.x, y))
@@ -395,31 +528,82 @@ let get_squares_to_highlight (move : Game.move)
       in
       get_section_as_coordinate_list make_coord_board
 
+let get_secondary_squares (board : Sudoku_board.t) (move : move) (forced_by : Hint.Hint_system.forced_source) : (int * int) list = 
+  let open Hint.Hint_system in
+  let row_idx = move.x in
+  let col_idx = move.y in
+  let target = move.value |> Option.value_exn in
+  let block_idx = (row_idx / 3 * 3) + (col_idx / 3) in
+  let make_coord_block x =
+    let y = x mod 3 in
+    let x = x / 3 in
+    ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y) in
+  let section, make_coord = match forced_by with
+    | Single | Incorrect -> [], (fun _ -> (0, 0))
+    | Row -> Sudoku_board.get_row board row_idx, (fun y -> (row_idx, y))
+    | Col -> Sudoku_board.get_col board col_idx, (fun x -> (x, col_idx))
+    | Block -> Sudoku_board.get_block board block_idx, make_coord_block
+  in
+    let get_secondary_squares_of_cell row_idx col_idx = 
+      let check_section (section : Sudoku_board.element list) (make_coords : int -> (int * int)) = 
+        if List.filter section ~f:(fun c -> match c with 
+                                        | Fixed a | Volatile a -> a = target
+                                        | _ -> false) |> List.length > 0 then
+        get_section_as_coordinate_list make_coords
+        else [] 
+      in
+      let block_idx = (row_idx / 3 * 3) + (col_idx / 3) in
+      let make_coord_block x =
+        let y = x mod 3 in
+        let x = x / 3 in
+        ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y) in
+      let block = check_section (Sudoku_board.get_block board block_idx) make_coord_block in
+      if List.length block > 0 then block
+      else let row = check_section (Sudoku_board.get_row board row_idx) (fun y -> row_idx, y) in
+      if List.length row > 0 then row
+      else check_section (Sudoku_board.get_col board col_idx) (fun x -> x, col_idx)
+    in
+    (* only look for secondary squares if main square is empty *)
+    List.filter_mapi section ~f:(fun i c -> 
+      let x, y = make_coord i in
+        match c with 
+          | Empty -> get_secondary_squares_of_cell x y |> Some
+          | _ -> None)
+    |> List.concat
+
+      
+
+
 let get_board request =
   match Dream.cookie request "current.game" with
   | None -> None
   | Some game_title -> Configuration.get_game game_title
 
-let hint_to_json (hint : Game.hint) : Yojson.Safe.t =
+let hint_to_json board (hint : hint) : Yojson.Safe.t =
   match hint with
   | Incorrect_cell | Already_solved | Suggest_guess _ ->
       let desc = Game.describe_hint hint in
       `Assoc [ ("hint", `String desc) ]
   | Suggested_move (move, forced_by) ->
-      let squares_to_highlight = get_squares_to_highlight move forced_by in
-      let squares_as_string =
+      let squares_to_highlight = get_primary_squares move forced_by in
+      let _ = print_endline (move.value |> Option.value_exn |> Int.to_string) in
+      let secondary_squares = get_secondary_squares board move forced_by in
+      let coordinates_to_json_str ls = 
         `List
           (List.map
              ~f:(fun (x, y) -> `List [ `Int x; `Int y ])
-             squares_to_highlight)
+             ls)
       in
       let desc = Game.describe_hint hint in
       let target = `List [ `Int move.x; `Int move.y ] in
       `Assoc
         [
           ("hint", `String desc);
-          ("squares", squares_as_string);
-          ("target", target);
+          ("squares", coordinates_to_json_str squares_to_highlight);
+          ("secondary_squares", coordinates_to_json_str secondary_squares);
+          ("target_coord", target);
+          ("target_elem", `Int (move.value |> Option.value_exn));
+          ("forced_by", `String (Hint.Hint_system.forced_source_to_string forced_by));
         ]
 
 let parse_initialize request =
@@ -434,14 +618,17 @@ let parse_initialize request =
       |> List.map ~f: Char.of_string
       |> String.of_list in
   let _ = Configuration.add_game title difficulty board in
-  Dream.json board_json
+  let response = Dream.response board_json in
+             Dream.add_header response "Content-Type" "application/json";
+             Dream.set_cookie response request "current.game" title;
+             Lwt.return response
 
 let parse_hint request =
   match get_board request with
   | None -> Dream.respond "error"
   | Some (_, board) ->
       let hint = Game.generate_hint ~use_crooks:true board in
-      let json = hint_to_json hint |> Yojson.Safe.to_string in
+      let json = hint_to_json board hint |> Yojson.Safe.to_string in
       Dream.json json
 
 let parse_move request =
