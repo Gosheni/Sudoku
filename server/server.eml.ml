@@ -188,6 +188,7 @@ let render _ =
           let coords = getSelectedCellCoords();
           let x = coords[0];
           let y = coords[1];
+          if (x == None || y == None) { return }
           let baseURL = "/api/v1/move?x=" + x + "&y=" + y;
           let reqUrl = (move ==  null) ? baseURL : baseURL  + "&move="+ move ;
   
