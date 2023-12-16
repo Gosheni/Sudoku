@@ -227,12 +227,30 @@ let render _ =
           if (!hasSeenEmpty) {
             console.log("You have won");
             setTimeout(function() {
+              clearInterval(timer);
               alert("You have won!!");
             }, 500);
           }
 
         }
-        var currentBoard = ""
+
+        function updateTimer() {
+          // Inspired by https://www.w3schools.com/howto/howto_js_countdown.asp
+          let now = new Date().getTime();
+          var distance = now - startTime;
+
+          let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          document.getElementById("timer").innerHTML = (days > 0 ? days + "d " : "") + hours + "h "
+          + minutes + "m " + seconds + "s ";
+        }
+        var timer = setInterval(updateTimer, 100);
+
+        var currentBoard = "";
+        var startTime;
         fetch("/api/v1/initialize")
           .then((response) => {
             if (response.ok) {
@@ -241,7 +259,10 @@ let render _ =
               throw new Error(`${response.status} ${response.statusText}`);
             }
           })
-          .then((json) => populateBoard(json));
+          .then((json) => {
+            startTime = new Date().getTime();  
+            populateBoard(json)
+          });
 
         document.addEventListener('keydown', function(event) {
             console.log(event.keyCode);
@@ -280,6 +301,7 @@ let render _ =
     <body>
     <div class="container">
       <div class="playarea">
+        <h1 id="timer"></h1>
         <table class="sudoku-table">
           <%s! 
           List.range 0 9
