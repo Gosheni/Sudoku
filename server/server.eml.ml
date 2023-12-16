@@ -17,7 +17,7 @@ let hint_area _ =
       </td>
     </tr>
     <tr>
-      <td class="hint-area" id="hint">Hint text appears here</td>
+      <td class="hint-area" id="hint">Press the button above if you need help</td>
     </tr>
   </table>
 
@@ -79,6 +79,7 @@ let render _ =
         }
         .darkened {
           background-color: #3d3d3d;
+          color: black;
         }
         .secondary-hint {
           background-color: #aeaeae;
@@ -139,7 +140,7 @@ let render _ =
         }
         .hint-key {
           margin-top: 10px;
-          display: flex;
+          display: none;
           flex-direction: row;
         }
         .hint-key-subsection {
@@ -200,7 +201,12 @@ let render _ =
       }
 
       function newGame(difficulty) {
-        unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
+        // reset hints
+        unhighlightCells();
+        hintCalled = false;
+        var hintText = document.getElementById("hint");
+        hintText.textContent = "Press the button above if you need help";
+
         let reqUrl = "/api/v1/initialize?difficulty=" + difficulty;
         fetch(reqUrl)
           .then((response) => {
@@ -220,6 +226,8 @@ let render _ =
       function highlightHint(squares, secondary, target, elem, forced_by) {
         unhighlightCells(); // in case two hints are asked for in a row
         hintCalled = true;
+        var key = document.getElementsByClassName("hint-key");
+        key[0].style.display = "flex";
         var cells = document.getElementsByClassName("cell");
         console.log(secondary[0]);
         console.log(target[0]);
@@ -262,6 +270,12 @@ let render _ =
               cell.classList.add("outline-left");
             }
           }
+          if (forced_by === "single") {
+            cell.classList.add("outline-top");
+            cell.classList.add("outline-bottom");
+            cell.classList.add("outline-left");
+            cell.classList.add("outline-right");
+          }
         }
         for (var i = 0; i < secondary.length; i++) {
           var square = secondary[i];
@@ -280,6 +294,8 @@ let render _ =
 
       function unhighlightCells() {
         if (hintCalled) {
+          var key = document.getElementsByClassName("hint-key");
+          key[0].style.display = "none";
           var cells = document.getElementsByClassName("cell");
           for (var i = 0; i < cells.length; i++) {
             var cell = cells.item(i);
@@ -509,12 +525,12 @@ let render _ =
     </body>
   </html>
 
-let get_section_as_coordinate_list (make_coord : int -> int * int) =
+let get_section_as_coordinate_list (make_coord : int -> Sudoku_board.coordinate) =
   List.range 0 9 |> List.map ~f:make_coord
   |> List.fold ~init:[] ~f:(fun acc x -> x :: acc)
 
 let get_primary_squares (move : move)
-  (forced_by : Hint.Hint_system.forced_source) : (int * int) list =
+    (forced_by : Hint.Hint_system.forced_source) : Sudoku_board.coordinate list =
   let open Hint.Hint_system in
   match forced_by with
   | Single | Incorrect -> [ (move.x, move.y) ]
@@ -528,7 +544,8 @@ let get_primary_squares (move : move)
       in
       get_section_as_coordinate_list make_coord_board
 
-let get_secondary_squares (board : Sudoku_board.t) (move : move) (forced_by : Hint.Hint_system.forced_source) : (int * int) list = 
+let get_secondary_squares (board : Sudoku_board.t) (move : move)
+    (forced_by : Hint.Hint_system.forced_source) : Sudoku_board.coordinate list =
   let open Hint.Hint_system in
   let row_idx = move.x in
   let col_idx = move.y in
@@ -537,42 +554,52 @@ let get_secondary_squares (board : Sudoku_board.t) (move : move) (forced_by : Hi
   let make_coord_block x =
     let y = x mod 3 in
     let x = x / 3 in
-    ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y) in
-  let section, make_coord = match forced_by with
-    | Single | Incorrect -> [], (fun _ -> (0, 0))
-    | Row -> Sudoku_board.get_row board row_idx, (fun y -> (row_idx, y))
-    | Col -> Sudoku_board.get_col board col_idx, (fun x -> (x, col_idx))
-    | Block -> Sudoku_board.get_block board block_idx, make_coord_block
+    ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y)
   in
-    let get_secondary_squares_of_cell row_idx col_idx = 
-      let check_section (section : Sudoku_board.element list) (make_coords : int -> (int * int)) = 
-        if List.filter section ~f:(fun c -> match c with 
-                                        | Fixed a | Volatile a -> a = target
-                                        | _ -> false) |> List.length > 0 then
-        get_section_as_coordinate_list make_coords
-        else [] 
-      in
-      let block_idx = (row_idx / 3 * 3) + (col_idx / 3) in
-      let make_coord_block x =
-        let y = x mod 3 in
-        let x = x / 3 in
-        ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y) in
-      let block = check_section (Sudoku_board.get_block board block_idx) make_coord_block in
-      if List.length block > 0 then block
-      else let row = check_section (Sudoku_board.get_row board row_idx) (fun y -> row_idx, y) in
-      if List.length row > 0 then row
-      else check_section (Sudoku_board.get_col board col_idx) (fun x -> x, col_idx)
+  let section, make_coord =
+    match forced_by with
+    | Single | Incorrect -> ([], fun _ -> (0, 0))
+    | Row -> (Sudoku_board.get_row board row_idx, fun y -> (row_idx, y))
+    | Col -> (Sudoku_board.get_col board col_idx, fun x -> (x, col_idx))
+    | Block -> (Sudoku_board.get_block board block_idx, make_coord_block)
+  in
+  let get_secondary_squares_of_cell row_idx col_idx =
+    let check_section (section : Sudoku_board.element list)
+        (make_coords : int -> Sudoku_board.coordinate) =
+      if
+        List.filter section ~f:(fun c ->
+            match c with Fixed a | Volatile a -> a = target | _ -> false)
+        |> List.length > 0
+      then get_section_as_coordinate_list make_coords
+      else []
     in
-    (* only look for secondary squares if main square is empty *)
-    List.filter_mapi section ~f:(fun i c -> 
+    let block_idx = (row_idx / 3 * 3) + (col_idx / 3) in
+    let make_coord_block x =
+      let y = x mod 3 in
+      let x = x / 3 in
+      ((row_idx / 3 * 3) + x, (col_idx / 3 * 3) + y)
+    in
+    let block =
+      check_section (Sudoku_board.get_block board block_idx) make_coord_block
+    in
+    if List.length block > 0 then block
+    else
+      let row =
+        check_section (Sudoku_board.get_row board row_idx) (fun y ->
+            (row_idx, y))
+      in
+      if List.length row > 0 then row
+      else
+        check_section (Sudoku_board.get_col board col_idx) (fun x ->
+            (x, col_idx))
+  in
+  (* only look for secondary squares if main square is empty *)
+  List.filter_mapi section ~f:(fun i c ->
       let x, y = make_coord i in
-        match c with 
-          | Empty -> get_secondary_squares_of_cell x y |> Some
-          | _ -> None)
-    |> List.concat
-
-      
-
+      match c with
+      | Empty -> get_secondary_squares_of_cell x y |> Some
+      | _ -> None)
+  |> List.concat
 
 let get_board request =
   match Dream.cookie request "current.game" with
@@ -588,11 +615,8 @@ let hint_to_json board (hint : hint) : Yojson.Safe.t =
       let squares_to_highlight = get_primary_squares move forced_by in
       let _ = print_endline (move.value |> Option.value_exn |> Int.to_string) in
       let secondary_squares = get_secondary_squares board move forced_by in
-      let coordinates_to_json_str ls = 
-        `List
-          (List.map
-             ~f:(fun (x, y) -> `List [ `Int x; `Int y ])
-             ls)
+      let coordinates_to_json_str ls =
+        `List (List.map ~f:(fun (x, y) -> `List [ `Int x; `Int y ]) ls)
       in
       let desc = Game.describe_hint hint in
       let target = `List [ `Int move.x; `Int move.y ] in
@@ -603,14 +627,16 @@ let hint_to_json board (hint : hint) : Yojson.Safe.t =
           ("secondary_squares", coordinates_to_json_str secondary_squares);
           ("target_coord", target);
           ("target_elem", `Int (move.value |> Option.value_exn));
-          ("forced_by", `String (Hint.Hint_system.forced_source_to_string forced_by));
+          ( "forced_by",
+            `String (Hint.Hint_system.forced_source_to_string forced_by) );
         ]
 
 let parse_initialize request =
   let open Sudoku_board in
-  let difficulty = Dream.query request "difficulty"
-  |> Option.map ~f:(fun x -> int_of_string x)
-  |> Option.value ~default:50  
+  let difficulty =
+    Dream.query request "difficulty"
+    |> Option.map ~f:(fun x -> int_of_string x)
+    |> Option.value ~default:50
   in
   let board = generate_random () |> Fn.flip generate_degenerate difficulty in
   let board_json: string = serialize board |> Yojson.Safe.to_string in
@@ -619,9 +645,9 @@ let parse_initialize request =
       |> String.of_list in
   let _ = Configuration.add_game title difficulty board in
   let response = Dream.response board_json in
-             Dream.add_header response "Content-Type" "application/json";
-             Dream.set_cookie response request "current.game" title;
-             Lwt.return response
+  Dream.add_header response "Content-Type" "application/json";
+  Dream.set_cookie response request "current.game" title;
+  Lwt.return response
 
 let parse_hint request =
   match get_board request with
@@ -669,9 +695,9 @@ let get_api path = Dream.get ("/api/v1/" ^ path)
 let () =
   Dream.run @@ Dream.logger
   @@ Dream.router
-       [
-         Dream.get "/" (fun _ -> Dream.html (render ()));
-         get_api "initialize" parse_initialize;
-         get_api "move" parse_move;
-         get_api "hint" parse_hint;
-       ]
+        [
+          Dream.get "/" (fun _ -> Dream.html (render ()));
+          get_api "initialize" parse_initialize;
+          get_api "move" parse_move;
+          get_api "hint" parse_hint;
+        ]

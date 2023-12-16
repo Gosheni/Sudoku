@@ -96,7 +96,7 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
       if Sudoku_board.is_solved board then Already_solved
       else
         let possibile_moves = Hint_system.make_possibility_sets board in
-        let forced_moves : (int * int * int * Hint_system.forced_source) list =
+        let forced_moves : (Hint_system.coordinate * int * Hint_system.forced_source) list =
           Hint_system.get_forced_moves possibile_moves
         in
         if List.length forced_moves = 0 then
@@ -115,7 +115,7 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
                 | Some _ -> make_guess_suggestion possibile_moves
                 (* if still no forced moves after using crooks suggest guess *)
               else
-                let x, y, elem, forced_by =
+                let (x, y), elem, forced_by =
                   List.nth_exn new_forced_moves
                     (List.length new_forced_moves |> Random.int)
                 in
@@ -135,7 +135,7 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
                   (* let full_desc = make_full_desc desc elem x y removed in *)
                   Suggested_move (next_move, forced_by)
         else
-          let x, y, elem, forced_by =
+          let (x, y), elem, forced_by =
             List.nth_exn forced_moves (List.length forced_moves |> Random.int)
           in
           let next_move : move = { x; y; value = Some elem } in

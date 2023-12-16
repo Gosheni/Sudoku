@@ -18,7 +18,7 @@ module Hint_system : sig
   val forced_source_to_string : forced_source -> string
   (** function to convert forced_source to string *)
 
-  val get_forced_moves : t -> (int * int * int * forced_source) list
+  val get_forced_moves : t -> (coordinate * int * forced_source) list
   (** Takes a markup and returns a list of moves that are forced by the sudoku rules. Each returned move
         is of the form row, col, element, description.
         Description is a string that tells us what exactly forced this move *)
