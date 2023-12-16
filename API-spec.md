@@ -12,7 +12,9 @@
 - Notes: If this solves the board, a highscore will be added.
 ### Get a hint 
 - GET: /api/v1/hint
-- Returns: ??
+- Returns: 
+    - 200: A json containing hint details
+    - 405: An error message to be displayed
 ### Get solution
 - GET: /api/v1/solve
 - Returns: 200: A board in JSON format

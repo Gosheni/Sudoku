@@ -5,6 +5,8 @@ module Configuration = struct
   type highscore = { name : string; difficulty : int; total_time : float }
   [@@deriving equal, yojson]
 
+  type highscore_list = highscore list [@@deriving equal, yojson]
+
   type game = {
     name : string;
     file_location : string;
@@ -13,7 +15,7 @@ module Configuration = struct
   }
   [@@deriving equal, yojson]
 
-  type t = { highscores : highscore list; games : game list }
+  type t = { highscores : highscore_list; games : game list }
   [@@deriving equal, yojson]
 
   let empty = { highscores = []; games = [] }
@@ -90,6 +92,21 @@ module Configuration = struct
     match get_most_recent () with
     | None -> failwith "Current game not found"
     | Some a -> a
+  
+  let get_highscores _ : highscore list =
+    let config = load_config () in
+    config.highscores
+
+  (* keep only best 10 scores *)
+  let add_new_score (score : highscore) : highscore list =
+    let config = load_config () in
+    let top_ten = 
+      List.sort (score::config.highscores) ~compare:(fun a b ->
+          Float.compare a.total_time b.total_time)
+      |> Fn.flip List.take 10
+    in
+    score::top_ten
+
 
   let move_game_to_first game_name : Sudoku_board.t option =
     match get_game_with_name game_name with
@@ -120,7 +137,7 @@ module Configuration = struct
             total_time = time_spent;
           }
         in
-        let new_highscores_list = new_highscore :: config.highscores in
+        let new_highscores_list = add_new_score new_highscore in
         save_config { highscores = new_highscores_list; games = new_games_list };
         delete_game game;
         Ok ()
