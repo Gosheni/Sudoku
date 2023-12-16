@@ -492,7 +492,10 @@ let render _ =
             clearInterval(timer);
             gameFinished = true;
             setTimeout(function() {
-              alert("You have won!!");
+              var playerName = prompt("Congratulations! You've won! Enter your name:");
+              if (playerName) {
+                console.log("Player's name:", playerName);
+              }
             }, 500);
           }
 
