@@ -28,6 +28,12 @@ let new_game_area _ =
     <button class="new-game-button" onclick="newGame(60)">New Hard</button>
   </div>
 
+let pause_area _ =
+  <div>
+    <button class="pause-button" onclick="pauseGame(this)">Pause</button>
+    <button class="resume-button" style="display:none" onclick="resumeGame(this)">Resume</button>
+  </div>
+
 let table_row id = 
   <tr id="<%s id %>">
     <%s! 
@@ -107,6 +113,11 @@ let render _ =
           display: flex;
           flex-direction: column;
         }
+        .pause-msg {
+          font-size: 20px;
+          padding: 10px;
+          position: relative;
+        }
         .hint-container {
           margin-left: 30px;
         }  
@@ -168,6 +179,24 @@ let render _ =
           font-size: 15px;
           margin-right: 20px; /* Optional: Add some margin between buttons */
         }
+        .pause-container {
+          margin-top: 30px;
+          margin-left: 140px;
+        }  
+        .pause-button {
+          display: inline-block;
+          background-color: #ff0000;
+          border-radius: 7px;
+          width: 150px; 
+          font-size: 15px;
+        }
+        .resume-button {
+          display: inline-block;
+          background-color: #00ff00;
+          border-radius: 7px;
+          width: 150px; 
+          font-size: 15px; 
+        }
         #timer {
           text-align: center;
         }
@@ -175,6 +204,7 @@ let render _ =
         <script>
       let hintCalled = false;
       let gameFinished = false;
+      let pauseTime = 0;
       function changeSelectedCell(cell) {
         unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
         isHighlighted = cell.classList.contains('selected');
@@ -198,6 +228,38 @@ let render _ =
             }
           })
           .then((json) => makeHint(json));
+      }
+
+      function pauseGame(button) {
+        let pause = document.getElementsByClassName("pause-button")[0];
+        let resume = document.getElementsByClassName("resume-button")[0];
+        pause.style.display = "none";
+        resume.style.display = "block";
+
+        clearInterval(timer);
+
+        pauseTime = new Date().getTime();
+
+        let board = document.getElementsByClassName("sudoku-table")[0];
+        let msg = document.getElementsByClassName("pause-msg")[0];
+        board.style.display = "none";
+        msg.style.display = "flex";
+      }
+      
+      function resumeGame(button) {
+        let pause = document.getElementsByClassName("pause-button")[0];
+        let resume = document.getElementsByClassName("resume-button")[0];
+        resume.style.display = "none";
+        pause.style.display = "block";
+
+        let now = new Date().getTime();
+        elapsedTime += (now - pauseTime);
+        timer = setInterval(updateTimer, 100);
+
+        let board = document.getElementsByClassName("sudoku-table")[0];
+        let msg = document.getElementsByClassName("pause-msg")[0];
+        board.style.display = "flex";
+        msg.style.display = "none";
       }
 
       function newGame(difficulty) {
@@ -414,10 +476,11 @@ let render _ =
 
         }
 
+        let elapsedTime = 0;
         function updateTimer() {
           // Inspired by https://www.w3schools.com/howto/howto_js_countdown.asp
           let now = new Date().getTime();
-          var distance = now - startTime;
+          var distance = now - startTime - elapsedTime;
 
           let days = Math.floor(distance / (1000 * 60 * 60 * 24));
           let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -480,6 +543,7 @@ let render _ =
     <body>
     <div class="container">
       <div class="playarea">
+        <div class="pause-msg" style="display:none">Game paused</div>
         <table class="sudoku-table">
           <%s! 
           List.range 0 9
@@ -518,6 +582,9 @@ let render _ =
         <div class="new-game-container">
           <%s! new_game_area () %>
         </div> 
+        <div class="pause-container">
+          <%s! pause_area () %>
+        </div>
 
       </div>
       
