@@ -188,7 +188,7 @@ let render _ =
           let coords = getSelectedCellCoords();
           let x = coords[0];
           let y = coords[1];
-          if (x == None || y == None) { return }
+          if (!x || !y) { return }
           let baseURL = "/api/v1/move?x=" + x + "&y=" + y;
           let reqUrl = (move ==  null) ? baseURL : baseURL  + "&move="+ move ;
   
@@ -271,7 +271,6 @@ let render _ =
           });
 
         document.addEventListener('keydown', function(event) {
-            console.log(event.keyCode);
             unhighlightCells(); // included whereever an action is taken, to cancel hint highlights
 
             let coords = getSelectedCellCoords();
