@@ -23,7 +23,6 @@ module type Sudoku_grid = sig
   val get_row : t -> int -> element list
   val get_col : t -> int -> element list
   val get_block : t -> int -> element list
-  val check_keys : t -> bool
   val is_valid_grid : t -> bool
 
   type json = Yojson.Safe.t

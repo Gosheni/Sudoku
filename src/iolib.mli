@@ -8,19 +8,33 @@ module Configuration : sig
     total_time : float;
   }
   [@@deriving yojson]
+  (** A type that represents a highscore, including a username, the game's id, 
+      the game's difficulty and how much time was spent on solving the puzzle *)
 
   type highscore_list = highscore list [@@deriving yojson]
+  (** A type that represents a list of highscore, required for synthesizing json *)
+
 
   type game
-
-  val save_board_to_json : game -> Board.Sudoku_board.t -> unit
+  (** A type that represents the metadata of a game, including its id and filelocation *)
+  
   val load_board_from_json : game -> Board.Sudoku_board.t option
+  (** Loads a sudoku board from file using its metadata *)
+
   val add_game : string -> int -> Board.Sudoku_board.t -> game
+  (** Saves a sudoku game including the game's name/id and difficulty *)
   val get_game : string -> (game * Board.Sudoku_board.t) option
+  (** Retrieves a sudoku board and its metadata from the games name/id *)
   val get_most_recent : unit -> (game * Board.Sudoku_board.t) option
+  (** Retrieves the most recently created sudoku board and its metadata *)
   val get_highscores : unit -> highscore list
+  (** Retrieves the most recent highscores *)
   val update_name_for_highscore : string -> string -> unit
+  (** Replaces the temporary id associated with a highscore  *)
   val move_game_to_first : string -> Board.Sudoku_board.t option
+  (** Make a game the most recent *)
   val update_game : game -> Board.Sudoku_board.t -> unit
-  val finish_game : game -> (unit, string) result
+  (** Make a game the most recent *)
+  val finish_game : game -> bool -> (unit, string) result
+  (** Marks a game as completed and optionally saves the highscore *)
 end

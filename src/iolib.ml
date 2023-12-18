@@ -137,25 +137,31 @@ module Configuration = struct
           { highscores = config.highscores; games = game :: new_games_list };
         load_board_from_json game
 
-  let finish_game (game : game) : (unit, string) result =
+  let finish_game (game : game) (save_highscore : bool) : (unit, string) result
+      =
     let config = load_config () in
     match get_game_with_name game.name with
     | None -> Error "This game does not exist"
     | Some game ->
-        let time_spent = Float.(Core_unix.time () - game.start_time) in
         let new_games_list =
           List.filter config.games ~f:(fun other_game ->
               String.(other_game.name <> game.name))
         in
-        let new_highscore : highscore =
-          {
-            id = game.name;
-            username = None;
-            difficulty = game.difficulty;
-            total_time = time_spent;
-          }
+        let new_highscores_list =
+          if save_highscore then
+            let time_spent = Float.(Core_unix.time () - game.start_time) in
+            let new_highscore : highscore =
+              {
+                id = game.name;
+                username = None;
+                difficulty = game.difficulty;
+                total_time = time_spent;
+              }
+            in
+            add_new_score new_highscore
+          else config.highscores
         in
-        let new_highscores_list = add_new_score new_highscore in
+
         save_config { highscores = new_highscores_list; games = new_games_list };
         delete_game game;
         Ok ()

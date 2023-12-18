@@ -873,7 +873,7 @@ let parse_move request =
         match Game.do_move board move with
         | Ok new_board ->
             if Sudoku_board.is_solved new_board then
-              let _ = Configuration.finish_game game in
+              let _ = Configuration.finish_game game true in
               ()
             else Configuration.update_game game new_board;
             let json =

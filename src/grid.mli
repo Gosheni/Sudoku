@@ -30,7 +30,6 @@ module type Element = sig
     (** Returns the column at the given index. Enforces that the given index and board are valid *)
     val get_block : t -> int -> element list
     (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
-    val check_keys : t -> bool
 
     val is_valid_grid: t -> bool
 

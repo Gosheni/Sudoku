@@ -44,7 +44,7 @@ let make_move (game : Configuration.game) (v : int option) r c =
       Stdio.print_endline (Sudoku_board.pretty_print board);
       if Sudoku_board.is_solved board then (
         Stdio.print_endline "Solved the Sudoku game!";
-        match Configuration.finish_game game with
+        match Configuration.finish_game game true with
         | Ok () -> Stdio.print_endline "Game finished and recorded\n"
         | Error msg -> Stdio.print_endline ("Error: " ^ msg))
       else Configuration.update_game game board
@@ -82,7 +82,7 @@ let handle_command command_string command_args =
       | Some board -> (
           Stdio.print_endline "Solved the Sudoku game!";
           Stdio.print_endline (Sudoku_board.pretty_print board);
-          match Configuration.finish_game metadata with
+          match Configuration.finish_game metadata false with
           | Ok () -> Stdio.print_endline "Game finished and recorded\n"
           | Error msg -> Stdio.print_endline ("Error: " ^ msg))
       | None ->
