@@ -127,7 +127,7 @@ module Configuration = struct
   let add_new_score (score : highscore) : highscore list =
     let config = load_config () in
     let top_ten =
-      List.sort (score :: config.highscores) ~compare:(fun a b ->
+      List.sort config.highscores ~compare:(fun a b ->
           Float.compare a.total_time b.total_time)
       |> Fn.flip List.take 10
     in
