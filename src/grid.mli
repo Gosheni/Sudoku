@@ -22,16 +22,18 @@ module type Element = sig
     (** Given a board and a position, returns the element at that position, 
         otherwise None is returned if the board is invalid or an invalid position was given *)
     val set : t -> int -> int -> element -> t
-    (** Changes the value at a given coordinate to the given given element. Enforces that the given board is valid. *)
+    (** Changes the value at a given coordinate to the given given element. *)
     val get_all : t -> element list 
+    (** Returns all elements in the grid *)
     val get_row : t -> int -> element list
-    (** Returns the row at the given index. Enforces that the given index and board are valid *)
+    (** Returns the row at the given index. Assumes that the given index and board are valid *)
     val get_col : t -> int -> element list
-    (** Returns the column at the given index. Enforces that the given index and board are valid *)
+    (** Returns the column at the given index. Assumes that the given index and board are valid *)
     val get_block : t -> int -> element list
-    (** Returns the 3x3 block at the given index. Enforces that the given index and board are valid *)
+    (** Returns the 3x3 block at the given index. Assumes that the given index and board are valid *)
 
     val is_valid_grid: t -> bool
+    (** Checks that the grid is 9x9 and that each element satisfies [element_is_valid] *)
 
     type json = Yojson.Safe.t
 

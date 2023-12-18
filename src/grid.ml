@@ -45,8 +45,7 @@ module Make_sudoku_grid (E : Element) = struct
     Map.equal equal_row b1 b2
 
   let get (board : t) (x : int) (y : int) : element option =
-    let open Option.Let_syntax in
-    Map.find board x >>= Fn.flip Map.find y
+    Map.find board x |> Option.bind ~f:(Fn.flip Map.find y)
 
   let get_all (board : t) : element list =
     Map.data board |> List.map ~f:Map.data |> List.join
