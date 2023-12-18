@@ -2,16 +2,7 @@
  (name server)
  (public_name "Sudoku server")
  (package server)
- (libraries
-  dream
-  grid
-  board
-  hint
-  core
-  game
-  yojson
-  iolib
-  core_unix.command_unix)
+ (libraries dream board hint core game iolib)
  (preprocess
   (pps ppx_jane lwt_ppx)))
 

@@ -3,6 +3,6 @@
  (public_name "Sudoku CLI")
  (package cli)
  (modules sudoku)
- (libraries grid board core game iolib core_unix.command_unix)
+ (libraries board core game iolib core_unix.command_unix)
  (preprocess
   (pps ppx_jane)))
