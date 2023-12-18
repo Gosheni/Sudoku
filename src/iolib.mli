@@ -21,7 +21,7 @@ module Configuration : sig
   val load_board_from_json : game -> Board.Sudoku_board.t option
   (** Loads a sudoku board from file using its metadata *)
 
-  val add_game : string -> int -> Board.Sudoku_board.t -> game
+  val add_game : string -> int -> Board.Sudoku_board.t -> game option
   (** Saves a sudoku game including the game's name/id and difficulty *)
   val get_game : string -> (game * Board.Sudoku_board.t) option
   (** Retrieves a sudoku board and its metadata from the games name/id *)

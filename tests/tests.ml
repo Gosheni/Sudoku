@@ -10,10 +10,7 @@ open Board
 open Game
 (* open Grid *)
 
-let force_unwrap (optional : 'a option) : 'a =
-  match optional with
-  | None -> failwith "force_unwrap only accepts 'Some' values"
-  | Some a -> a
+let force_unwrap = Option.value_exn
 
 let test_pretty_printer _ =
   let expected_empty =
@@ -596,8 +593,8 @@ let test_hints_and_moves _ =
 
 let test_io _ =
   let open Iolib.Configuration in
-  let game = add_game "Test_game" 0 example_board_5 in
-  let (most_recent, _) = get_most_recent () |> force_unwrap in
+  let game = add_game "Test_game" 0 example_board_5 |> force_unwrap in
+  let most_recent, _ = get_most_recent () |> force_unwrap in
   assert_equal game most_recent
 
 let test_guess _ =

@@ -6,6 +6,7 @@ open Iolib
 exception NotIntError of string
 exception OutsideOfRangeError of (int * int)
 exception NoRecentGame
+exception GameWithNameAlreadyExists
 
 let get_most_recent_exn _ : Configuration.game * Board.Sudoku_board.t =
   match Configuration.get_most_recent () with
@@ -30,6 +31,9 @@ let handle_exn (e : exn) : unit =
   | NoRecentGame ->
       Stdio.printf
         "There is no recent game. You can create one with the init command\n"
+  | GameWithNameAlreadyExists ->
+      Stdio.printf
+        "A game with that name already exists\n"
   | _ -> Stdio.print_endline "An unknown error occured"
 
 let make_move (game : Configuration.game) (v : int option) r c =
@@ -60,9 +64,11 @@ let init_with (name : string) (difficulty : int) =
       (Sudoku_board.generate_random ())
       difficulty
   in
-  let _ = Configuration.add_game name 50 current_board in
-  Stdio.printf "Initialized a new game %s!\n" name;
-  Stdio.print_endline (Sudoku_board.pretty_print current_board)
+  match Configuration.add_game name 50 current_board with
+  | None -> raise GameWithNameAlreadyExists
+  | Some _ ->
+      Stdio.printf "Initialized a new game %s!\n" name;
+      Stdio.print_endline (Sudoku_board.pretty_print current_board)
 
 let handle_command command_string command_args =
   match (String.lowercase command_string, command_args) with
@@ -132,8 +138,9 @@ let handle_command command_string command_args =
       let _, board = get_most_recent_exn () in
       Stdio.print_endline (Sudoku_board.pretty_print board)
   | "list", None ->
-    let names = Configuration.get_all_names () in
-    let _ = List.map names ~f: Stdio.print_endline in ()
+      let names = Configuration.get_all_names () in
+      let _ = List.map names ~f:Stdio.print_endline in
+      ()
   | ("hint" | "solve" | "scores"), Some _ ->
       Stdio.print_endline
         "Unexpected arguments provided for hint, solve or scores command"

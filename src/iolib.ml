@@ -59,20 +59,28 @@ module Configuration = struct
     to_yojson config |> Yojson.Safe.to_file location
 
   let add_game (name : string) (difficulty : int) (board : Sudoku_board.t) :
-      game =
-    let filename = (name |> String.filter ~f:Char.is_alphanum) ^ ".json" in
+      game option =
     let config = load_config () in
-    let game =
-      {
-        name;
-        file_location = filename;
-        start_time = Core_unix.time ();
-        difficulty;
-      }
-    in
-    save_board_to_json game board;
-    save_config { highscores = config.highscores; games = game :: config.games };
-    game
+    if
+      config.games
+      |> List.map ~f:(fun game -> game.name)
+      |> List.map ~f:String.lowercase
+      |> Fn.flip List.mem (String.lowercase name) ~equal:String.equal
+    then None
+    else
+      let filename = (name |> String.filter ~f:Char.is_alphanum) ^ ".json" in
+      let game =
+        {
+          name;
+          file_location = filename;
+          start_time = Core_unix.time ();
+          difficulty;
+        }
+      in
+      save_board_to_json game board;
+      save_config
+        { highscores = config.highscores; games = game :: config.games };
+      Some game
 
   let get_game_with_name (name : string) : game option =
     let config = load_config () in
