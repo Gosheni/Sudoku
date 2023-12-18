@@ -467,8 +467,6 @@ let render _ =
           if (gameFinished) { return }
           if (pauseTime != 0) { return }
           let coords = getSelectedCellCoords();
-          console.log("now here");
-          console.log(coords);
           let x = coords[0];
           let y = coords[1];
           if (!x || !y) { return }
