@@ -10,9 +10,9 @@ module Configuration = struct
     difficulty : int;
     total_time : float;
   }
-  [@@deriving equal, yojson]
+  [@@deriving yojson]
 
-  type highscore_list = highscore list [@@deriving equal, yojson]
+  type highscore_list = highscore list [@@deriving yojson]
 
   type game = {
     name : string;
@@ -23,7 +23,7 @@ module Configuration = struct
   [@@deriving equal, yojson]
 
   type t = { highscores : highscore_list; games : game list }
-  [@@deriving equal, yojson]
+  [@@deriving yojson]
 
   let empty = { highscores = []; games = [] }
   let location = "sudoku.config"
@@ -94,11 +94,6 @@ module Configuration = struct
   let get_most_recent _ : (game * Board.Sudoku_board.t) option =
     let config = load_config () in
     List.hd config.games |> Option.bind ~f:(fun game -> get_game game.name)
-
-  let get_most_recent_exn _ : game * Board.Sudoku_board.t =
-    match get_most_recent () with
-    | None -> failwith "Current game not found"
-    | Some a -> a
 
   let update_name_for_highscore (id : string) (new_name : string) : unit =
     let config = load_config () in

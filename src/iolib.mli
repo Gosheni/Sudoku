@@ -7,11 +7,9 @@ module Configuration : sig
     difficulty : int;
     total_time : float;
   }
-  [@@deriving equal, yojson]
+  [@@deriving yojson]
 
   type highscore_list = highscore list [@@deriving yojson]
-
-  val equal_highscore : highscore -> highscore -> bool
 
   type game
 
@@ -20,7 +18,6 @@ module Configuration : sig
   val add_game : string -> int -> Board.Sudoku_board.t -> game
   val get_game : string -> (game * Board.Sudoku_board.t) option
   val get_most_recent : unit -> (game * Board.Sudoku_board.t) option
-  val get_most_recent_exn : unit -> game * Board.Sudoku_board.t
   val get_highscores : unit -> highscore list
   val update_name_for_highscore : string -> string -> unit
   val move_game_to_first : string -> Board.Sudoku_board.t option
