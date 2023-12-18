@@ -27,7 +27,9 @@
   (ppx_jane
    (>= v0.16.0))
   (core_unix
-   (>= v0.16.0))))
+   (>= v0.16.0))
+  (bisect_ppx
+   (>= 2.8.3))))
 
 (package
  (name server)
@@ -47,5 +49,5 @@
    (>= 3.7.0))
   (ppx_jane
    (>= v0.16.0))
-  (core_unix
-   (>= v0.16.0))))
+  (bisect_ppx
+   (>= 2.8.3))))
