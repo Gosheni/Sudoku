@@ -165,4 +165,8 @@ module Configuration = struct
         save_config { highscores = new_highscores_list; games = new_games_list };
         delete_game game;
         Ok ()
+
+  let get_all_names _ : string list =
+    let config = load_config () in
+    List.map config.games ~f:(fun game -> game.name)
 end

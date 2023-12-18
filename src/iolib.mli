@@ -37,4 +37,6 @@ module Configuration : sig
   (** Make a game the most recent *)
   val finish_game : game -> bool -> (unit, string) result
   (** Marks a game as completed and optionally saves the highscore *)
+  val get_all_names: unit -> string list
+  (** Returns a list of all the ongoing games *)
 end

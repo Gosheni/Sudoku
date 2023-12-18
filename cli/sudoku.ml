@@ -128,6 +128,12 @@ let handle_command command_string command_args =
             ^ " Score: "
             ^ Float.to_string recent.total_time
             ^ "\n"))
+  | "print", None ->
+      let _, board = get_most_recent_exn () in
+      Stdio.print_endline (Sudoku_board.pretty_print board)
+  | "list", None ->
+    let names = Configuration.get_all_names () in
+    let _ = List.map names ~f: Stdio.print_endline in ()
   | ("hint" | "solve" | "scores"), Some _ ->
       Stdio.print_endline
         "Unexpected arguments provided for hint, solve or scores command"
