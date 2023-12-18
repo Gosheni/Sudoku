@@ -14,7 +14,7 @@ module Sudoku_board : sig
   val generate_random : unit -> t
   (** Generate a random fully solved sudoku board *)
   val generate_degenerate : t -> int -> t
-  (** Takes a fully solved sudoko and removes elements randomly while making sure the resulting board is still solvable. 
+  (** Takes a fully solved sudoku and removes elements randomly while making sure the resulting board is still solvable. 
      Also takes an int that determines how many elements will be removed. This method expects a fully solved sudoku *)
 
   val seed_to_list : int -> int list

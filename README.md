@@ -1,5 +1,5 @@
 1. **An overview of the purpose of the project**  
-We implement the game Sudoko including:
+We implement the game Sudoku including:
     - A solver
     - A board generator
     - A command-line interface client to play the game
@@ -190,7 +190,7 @@ We implement the game Sudoko including:
     ```
 
 5. **Also include a brief list of what order you will implement features.**
-    1. Initially we will work on our Sududo library that is the interface for updating and generating sudoku boards.
+    1. Initially we will work on our Sudoku library that is the interface for updating and generating sudoku boards.
     2. Then we'll add tests to ensure everything works as expected. 
     3. Then we will work on the command-line utility
     4. If we have the time, we will implement the additional features as stated in **1.** above.
