@@ -32,8 +32,7 @@ let handle_exn (e : exn) : unit =
       Stdio.printf
         "There is no recent game. You can create one with the init command\n"
   | GameWithNameAlreadyExists ->
-      Stdio.printf
-        "A game with that name already exists\n"
+      Stdio.printf "A game with that name already exists\n"
   | _ -> Stdio.print_endline "An unknown error occured"
 
 let make_move (game : Configuration.game) (v : int option) r c =
@@ -141,9 +140,9 @@ let handle_command command_string command_args =
       let names = Configuration.get_all_names () in
       let _ = List.map names ~f:Stdio.print_endline in
       ()
-  | ("hint" | "solve" | "scores"), Some _ ->
+  | ("hint" | "solve" | "scores" | "print" | "list"), Some _ ->
       Stdio.print_endline
-        "Unexpected arguments provided for hint, solve or scores command"
+        "Unexpected arguments provided for hint, solve, scores, print, or list command"
   | ("move" | "remove" | "load" | "init"), _ ->
       Stdio.print_endline
         "Invalid arguments for init, move, remove, save, or load command"
