@@ -126,12 +126,9 @@ module Configuration = struct
   (* keep only best 10 scores *)
   let add_new_score (score : highscore) : highscore list =
     let config = load_config () in
-    let top_ten =
-      List.sort config.highscores ~compare:(fun a b ->
-          Float.compare a.total_time b.total_time)
-      |> Fn.flip List.take 10
-    in
-    score :: top_ten
+    List.sort (score :: config.highscores) ~compare:(fun a b ->
+        Float.compare a.total_time b.total_time)
+    |> Fn.flip List.take 10
 
   let move_game_to_first game_name : Sudoku_board.t option =
     match get_game_with_name game_name with
