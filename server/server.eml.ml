@@ -564,7 +564,6 @@ let render _ =
               return response.json()
             } else {
               handleError(response)
-              throw new Error(`${response.status} ${response.statusText}`);
             }
           })
           .then((json) => {
@@ -578,7 +577,7 @@ let render _ =
               if (response.ok) {
                 return response.json()
               } else {
-                throw new Error(`${response.status} ${response.statusText}`);
+                handleError(response)
               }
             })
             .then((json) => {
@@ -602,7 +601,7 @@ let render _ =
                 scoreRow.classList.add("score");
                 console.log(score_recent);
                 var scoreName = document.getElementById("score recent name");
-                scoreName.textContent = score_recent["name"];
+                scoreName.textContent = score_recent.username;
                 var scoreScore = document.getElementById("score recent score");
                 scoreScore.textContent = score_recent["total_time"].toString();
                 for (var i = 1; i < json.length; i++) {
@@ -614,7 +613,7 @@ let render _ =
                   }
                   scoreRow.classList.add("score");
                   var scoreName = document.getElementById("score " + i + " name");
-                  scoreName.textContent = score["name"];
+                  scoreName.textContent = score.username;
                   var scoreScore = document.getElementById("score " + i + " score");
                   scoreScore.textContent = score["total_time"].toString();
                 }
