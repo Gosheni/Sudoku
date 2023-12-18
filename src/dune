@@ -32,12 +32,3 @@
  (libraries core yojson core_unix board dream core_unix.sys_unix)
  (preprocess
   (pps ppx_jane ppx_deriving_yojson)))
-
-(executable
- (name sudoku)
- (public_name "Sudoku CLI")
- (package cli)
- (modules sudoku)
- (libraries grid board core game iolib core_unix.command_unix)
- (preprocess
-  (pps ppx_jane)))
