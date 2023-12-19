@@ -4,9 +4,9 @@ We implement the game Sudoku including:
 
    - A solver. 
 
-   - A board generator. 
+   - A board generator.  
 
-	 — A high score system based on time taken to complete a game.  
+   - A high score system based on time taken to complete a game.  
 
    - A hint system    
       - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board  
@@ -49,7 +49,6 @@ We implement the game Sudoku including:
 		- Use the buttons on the side to get hints, create a new game or pause the game.
 	
    - How to run (CLI):
-
 	```
 	dune exec cli/sudoku.exe [COMMAND] [OPTIONS]
 	```
