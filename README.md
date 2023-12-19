@@ -2,19 +2,19 @@
 
 We implement the game Sudoku including:
 
-    - A solver. 
+   - A solver. 
 
-    - A board generator. 
+   - A board generator. 
 
 	 — A high score system based on time taken to complete a game.  
 
-    - A hint system    
+   - A hint system    
       - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board  
       - Hint system will also explain what information a player would look at to arrive at the move being hinted.  
       - If no determinate moves can be found, hint system will recommend guesses with least variability. 
       - Hint system will use preemptive sets to find complicated moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf)).  
 
-   - Functionality to save and load boards, of the users desired difficulty
+   - Functionality to save and load boards, of the users desired difficulty.  
 	- We offer two different ways to play the game:
 		- through a command line interface (CLI).
 		- through a web server built in Dream. Has a few additional features:
@@ -26,34 +26,35 @@ We implement the game Sudoku including:
 
 # Dependencies
 
-    - _yojson_ >= 3.7.0, to serialize/deserialize our sudoku board. 
-    - _stdio_ for doing the command-line interface. 
-	 - _dream_ >= 1.0.0~alpha5 for the web server
+   - _yojson_ >= 3.7.0, to serialize/deserialize our sudoku board. 
+   - _stdio_ for doing the command-line interface. 
+	- _dream_ >= 1.0.0~alpha5 for the web server
 
 # Installation and Usage
 
-	- Given opam and ocaml version 5.0.0, running the following installs all required packages:
+   - Given opam and ocaml version 5.0.0, running the following installs all required packages:
 	```
 	opam install . --deps-only --working-dir 
 	```
 
-	- How to run (web server):
+   - How to run (web server):
 	```
 	dune exec server/server.exe
 	```
-	- How to play on web server:
+
+   - How to play on web server:
 		- Click on a square on the board to highlight it, then click on the number board below the main game to add a number
 		- Alternatively, move the highlighted square with arrow keys and input numbers with 1-9 on the keyboard (or try to delete with backspace)
 		- Upon completing a game, enter the game name using the text prompt to record the score.
 		- Use the buttons on the side to get hints, create a new game or pause the game.
 	
-	- How to run (CLI):
+   - How to run (CLI):
 
 	```
 	dune exec cli/sudoku.exe [COMMAND] [OPTIONS]
 	```
 	
-	- List of CLI commands with options:
+   - List of CLI commands with options:
 		- init [DIFFICULTY] NAME
 			- creates a new game with the given NAME, optionally takes an integer 1-70 determining how difficult the game will be (higher means more difficult)
 			- prints the newly created board
@@ -85,5 +86,5 @@ We implement the game Sudoku including:
 			- loads the game with NAME, so any moves, hints etc are now done on the loaded board.
 			- to go back to the previous game, need to call load again
 
-# Further resources:
-    See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game. And [Wikipedia](https://en.wikipedia.org/wiki/Sudoku_solving_algorithms) for algorithms to solve a sudoku board.
+# Further resources
+   See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game. And [Wikipedia](https://en.wikipedia.org/wiki/Sudoku_solving_algorithms) for algorithms to solve a sudoku board.
