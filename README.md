@@ -81,4 +81,4 @@ We implement the game Sudoku including:
 			- to go back to the previous game, need to call load again
 
 # Further resources
-   See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game. And [Wikipedia](https://en.wikipedia.org/wiki/Sudoku_solving_algorithms) for algorithms to solve a sudoku board.
+   See [Wikipedia](https://en.wikipedia.org/wiki/Sudoku) for a description of the game.
