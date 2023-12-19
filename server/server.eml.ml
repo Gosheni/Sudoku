@@ -738,9 +738,9 @@ let render _ =
     </body>
   </html>
 
-let create_error (title : string) (message : string) =
+let create_error ?(status_code: int = 405) (title : string) (message : string) =
   { title; message } |> errorMessage_to_yojson |> Yojson.Safe.to_string
-  |> Dream.json ~code:405
+  |> Dream.json ~code:status_code
 
 let get_section_as_coordinate_list
     (make_coord : int -> Hint.Hint_system.coordinate) =
@@ -918,7 +918,7 @@ let parse_submit request =
   | None -> create_error "No game to give a name" ""
   | Some game_id ->
       Configuration.update_name_for_highscore game_id username;
-      create_error "Highscore submitted" ""
+      create_error ~status_code: 200 "Highscore submitted" ""
 
 let parse_score _ =
   let construct (recent: string) (top10: string) = 
