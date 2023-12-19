@@ -165,7 +165,7 @@ module Sudoku_board = struct
     | None -> assert false (* Solving an empty sudoku always succeeds *)
     | Some board -> board
 
-  let generate_degenerate (orignal_board : t) (difficulty : int) : t =
+  let generate_unsolved (orignal_board : t) (difficulty : int) : t =
     (* Assumes that orignal_board is solved *)
     let coordinates =
       List.cartesian_product (List.range 0 9) (List.range 0 9) |> List.permute
@@ -176,7 +176,10 @@ module Sudoku_board = struct
       if to_remove <= 0 then board
       else
         match possible_coordinates with
-        | [] -> board
+        | [] ->
+            board
+            [@coverage off]
+            (* This will never happen as that would mean an empty board has a unique solution *)
         | (row, col) :: remaining_coordinates ->
             let new_board = set board row col Empty in
             if

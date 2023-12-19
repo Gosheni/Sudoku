@@ -500,7 +500,7 @@ let test_generate_unsolved : test =
     50 :: List.range 1 20
     |> List.map ~f:(fun to_remove ->
            "test generate_single_unsolved" >:: fun _ ->
-           let unsolved = Sudoku_board.generate_degenerate board to_remove in
+           let unsolved = Sudoku_board.generate_unsolved board to_remove in
            assert_equal false @@ Sudoku_board.is_solved unsolved;
            assert_bool ""
              (Sudoku_board.solve_with_unique_solution unsolved |> Option.is_some);
@@ -568,8 +568,8 @@ let test_is_crooks_needed : test =
   List.init 10 ~f:(fun _ ->
       "test generate_solved" >:: fun _ ->
       let solved = Sudoku_board.generate_random () in
-      let degen = Sudoku_board.generate_degenerate solved 54 in
-      let hints_applied = apply_hints_without_crooks degen in
+      let unsolved = Sudoku_board.generate_unsolved solved 50 in
+      let hints_applied = apply_hints_without_crooks unsolved in
       if Sudoku_board.is_solved hints_applied then assert_bool "" true
       else
         (* tests that crooks can come up with moves after non-crooks fails *)
