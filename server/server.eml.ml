@@ -834,7 +834,6 @@ let hint_to_json board (hint : hint) : Yojson.Safe.t =
       `Assoc [ ("hint", `String desc) ]
   | Suggested_move (move, forced_by) ->
       let squares_to_highlight = get_primary_squares move forced_by in
-      let _ = print_endline (move.value |> Option.value_exn |> Int.to_string) in
       let secondary_squares = get_secondary_squares board move forced_by in
       let coordinates_to_json_str ls =
         `List (List.map ~f:(fun (x, y) -> `List [ `Int x; `Int y ]) ls)

@@ -97,7 +97,7 @@ module Hint_system = struct
                     then Col
                     else Block
                   in
-                  (* TODO: handle case where forced by multiple sections *)
+
                   ((row_idx, col_idx), forced_elem, forced_by) :: acc
                 else if List.length all_unique > 1 then
                   (* multiple unique elements in same cell which is impossible *)

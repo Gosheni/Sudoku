@@ -108,8 +108,6 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
               let new_forced_moves =
                 Hint_system.get_forced_moves updated_possibs
               in
-              (* let _ = print_endline ("new forced moves: " ^ (List.to_string new_forced_moves ~f:(fun (x, y, elem, _) ->
-                  "(" ^ (string_of_int x) ^ ", " ^ (string_of_int y) ^ ", " ^ (string_of_int elem) ^ ")"))) in *)
               if List.length new_forced_moves = 0 then
                 match Sudoku_board.solve_with_unique_solution board with
                 | None -> Incorrect_cell
@@ -123,17 +121,6 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
                 if elem = -1 then Incorrect_cell
                 else
                   let next_move : move = { x; y; value = Some elem } in
-                  let original_moves =
-                    Hint_system.get possibile_moves x y |> Option.value_exn
-                  in
-                  let after_removal =
-                    Hint_system.get updated_possibs x y |> Option.value_exn
-                  in
-                  let _ =
-                    List.filter original_moves ~f:(fun x ->
-                        not (List.mem after_removal x ~equal:Int.equal))
-                  in
-                  (* let full_desc = make_full_desc desc elem x y removed in *)
                   Suggested_move (next_move, forced_by)
         else
           let (x, y), elem, forced_by =

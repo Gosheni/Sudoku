@@ -533,12 +533,8 @@ let apply_hints_till_solved_or_guess board =
   let rec loop board =
     match Game.generate_hint ~use_crooks:true board with
     | Game.Suggested_move (move, _) -> (
-        (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
-           let _ = print_endline desc in *)
         match Game.do_move board move with
-        | Error _ ->
-            let _ = print_endline "error happened" in
-            board
+        | Error _ -> board
         | Ok new_board ->
             if Sudoku_board.is_solved new_board then new_board
             else loop new_board)
@@ -550,12 +546,8 @@ let apply_hints_without_crooks board =
   let rec loop board =
     match Game.generate_hint ~use_crooks:false board with
     | Game.Suggested_move (move, _) -> (
-        (* let _ = print_endline ("suggested move is " ^ (string_of_int (Option.value_exn move.value)) ^ " at " ^ (string_of_int move.x) ^ ", " ^ (string_of_int move.y)) in
-            let _ = print_endline desc in *)
         match Game.do_move board move with
-        | Error _ ->
-            let _ = print_endline "error happened" in
-            board
+        | Error _ -> board
         | Ok new_board ->
             if Sudoku_board.is_solved new_board then new_board
             else loop new_board)

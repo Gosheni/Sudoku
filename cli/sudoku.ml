@@ -146,7 +146,7 @@ let handle_command command_string command_args =
          command"
   | ("move" | "remove" | "load" | "init"), _ ->
       Stdio.print_endline
-        "Invalid arguments for init, move, remove, save, or load command"
+        "Invalid arguments for init, move, remove, or load command"
   | _ -> Stdio.print_endline "Invalid command"
 
 let () =
