@@ -14,8 +14,9 @@ We implement the game Sudoku including:
       - If no determinate moves can be found, hint system will recommend guesses with least variability. 
       - Hint system will use preemptive sets to find complicated moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf)).  
 
-   - Functionality to save and load boards, of the users desired difficulty.  
-	- We offer two different ways to play the game:
+   - Functionality to save and load boards, of the users desired difficulty.
+
+   - We offer two different ways to play the game:
 		- through a command line interface (CLI).
 		- through a web server built in Dream. Has a few additional features:
 			- visual representations of the information given in each hint
