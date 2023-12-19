@@ -24,8 +24,10 @@
 # Highscores API
 ## Get Highscores
 - **Endpoint**: `GET /api/v1/highscores?difficulty=[Int]`
-- **Returns**: A JSON object with two elements, `recent` which contains the most recent highscore, and `top10` which constains up to 10 highscores. Each highscore constains a username and the number of seconds it took for the player.
+- **Returns**: 
+  - 200 : A JSON object with two elements, `recent` which contains the most recent highscore, and `top10` which constains up to 10 highscores. Each highscore constains a username and the number of seconds it took for the player.
 
 ## Submit username
 - **Endpoint**: `Get /api/v1/submit?username=[String]`
-- **Returns**: - 200
+- **Returns**:
+  - 200: See `highscores`

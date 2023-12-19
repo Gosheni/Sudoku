@@ -507,7 +507,7 @@ let render _ =
                 handleError(response)
               }
             })
-            .then((json) => {});
+            .then((json) => handleHighscoreUpdate(json));
         }
 
         function populateBoard(json) {
@@ -581,6 +581,49 @@ let render _ =
             populateBoard(json)
           });
 
+
+
+        function handleHighscoreUpdate (json) {
+          if (!json["recent"]) {
+            var scoreMessage = document.getElementsByClassName("score-message")[0];
+            if (scoreMessage.classList.contains("score-message-hidden")) {
+              scoreMessage.classList.remove("score-message-hidden");
+            }
+          } else {
+            var scoreMessage = document.getElementsByClassName("score-message")[0];
+            scoreMessage.classList.add("score-message-hidden");
+
+            var score_recent = json.recent;
+            var scoreRow = document.getElementById("score recent");
+            if (scoreRow.classList.contains("score-hidden")) {
+              scoreRow.classList.remove("score-hidden");
+            }
+            console.log(scoreRow);
+            scoreRow.classList.add("score");
+            console.log(score_recent);
+            var scoreName = document.getElementById("score recent name");
+            scoreName.textContent = score_recent.username;
+            var scoreScore = document.getElementById("score recent score");
+            scoreScore.textContent = score_recent.total_time.toString() + " s";
+          }
+
+          if (json["top10"]) {
+            let top10 = json.top10;
+            for (var i = 1; i <= top10.length; i++) {
+              var score = json.top10[i-1];
+              console.log(score);
+              var scoreRow = document.getElementById("score " + i);
+              if (scoreRow.classList.contains("score-hidden")) {
+                scoreRow.classList.remove("score-hidden");
+              }
+              scoreRow.classList.add("score");
+              var scoreName = document.getElementById("score " + i + " name");
+              scoreName.textContent = score.username;
+              var scoreScore = document.getElementById("score " + i + " score");
+              scoreScore.textContent = score.total_time.toString() + " s";
+            }
+          }
+        }
         function updateHighScores () {
           fetch("/api/v1/highscore")
             .then((response) => {
@@ -591,47 +634,7 @@ let render _ =
               }
             })
             .then((json) => {
-              console.log("scores");
-              console.log(json);
-              if (!json["recent"]) {
-                var scoreMessage = document.getElementsByClassName("score-message")[0];
-                if (scoreMessage.classList.contains("score-message-hidden")) {
-                  scoreMessage.classList.remove("score-message-hidden");
-                }
-              } else {
-                var scoreMessage = document.getElementsByClassName("score-message")[0];
-                scoreMessage.classList.add("score-message-hidden");
-
-                var score_recent = json.recent;
-                var scoreRow = document.getElementById("score recent");
-                if (scoreRow.classList.contains("score-hidden")) {
-                  scoreRow.classList.remove("score-hidden");
-                }
-                console.log(scoreRow);
-                scoreRow.classList.add("score");
-                console.log(score_recent);
-                var scoreName = document.getElementById("score recent name");
-                scoreName.textContent = score_recent.username;
-                var scoreScore = document.getElementById("score recent score");
-                scoreScore.textContent = score_recent.total_time.toString();
-              }
-
-              if (json["top10"]) {
-                let top10 = json.top10;
-                for (var i = 1; i <= top10.length; i++) {
-                  var score = json.top10[i-1];
-                  console.log(score);
-                  var scoreRow = document.getElementById("score " + i);
-                  if (scoreRow.classList.contains("score-hidden")) {
-                    scoreRow.classList.remove("score-hidden");
-                  }
-                  scoreRow.classList.add("score");
-                  var scoreName = document.getElementById("score " + i + " name");
-                  scoreName.textContent = score.username;
-                  var scoreScore = document.getElementById("score " + i + " score");
-                  scoreScore.textContent = score.total_time.toString();
-                }
-              }
+              handleHighscoreUpdate(json)
           });
         }
 
@@ -909,15 +912,7 @@ let parse_move request =
       apply_move { x = Int.of_string x; y = Int.of_string y; value = None }
   | _ -> create_error "Invalid parameters" ""
 
-let parse_submit request =
-  let username =
-    Dream.query request "username" |> Option.value ~default:"Anonymous"
-  in
-  match Dream.cookie request "current.game" with
-  | None -> create_error "No game to give a name" ""
-  | Some game_id ->
-      Configuration.update_name_for_highscore game_id username;
-      create_error ~status_code: 200 "Highscore submitted" ""
+
 
 let parse_score _ =
   let construct (recent: string) (top10: string) = 
@@ -934,6 +929,16 @@ let parse_score _ =
     Dream.log "%s" (construct recentStr top10Str);
     construct recentStr top10Str)
   |> Dream.json
+
+let parse_submit request =
+  let username =
+    Dream.query request "username" |> Option.value ~default:"Anonymous"
+  in
+  match Dream.cookie request "current.game" with
+  | None -> create_error "No game to give a name" ""
+  | Some game_id ->
+      Configuration.update_name_for_highscore game_id username;
+      parse_score request
 
 let get_api path = Dream.get ("/api/v1/" ^ path)
 
