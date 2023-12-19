@@ -24,13 +24,6 @@ We implement the game Sudoku including:
 			- the visible timer and the ability to pause the game when needed.
 
 
-
-# Dependencies
-
-   - _yojson_ >= 3.7.0, to serialize/deserialize our sudoku board. 
-   - _stdio_ for doing the command-line interface.
-   - _dream_ >= 1.0.0~alpha5 for the web server
-
 # Installation and Usage
 
    - Given opam and ocaml version 5.0.0, running the following installs all required packages:
