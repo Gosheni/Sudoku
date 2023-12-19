@@ -28,20 +28,16 @@ We implement the game Sudoku including:
 # Dependencies
 
    - _yojson_ >= 3.7.0, to serialize/deserialize our sudoku board. 
-   - _stdio_ for doing the command-line interface. 
-	- _dream_ >= 1.0.0~alpha5 for the web server
+   - _stdio_ for doing the command-line interface.
+   - _dream_ >= 1.0.0~alpha5 for the web server
 
 # Installation and Usage
 
    - Given opam and ocaml version 5.0.0, running the following installs all required packages:
-	```
-	opam install . --deps-only --working-dir 
-	```
+	```opam install . --deps-only --working-dir```
 
    - How to run (web server):
-	```
-	dune exec server/server.exe
-	```
+	```dune exec server/server.exe```
 
    - How to play on web server:
 		- Click on a square on the board to highlight it, then click on the number board below the main game to add a number
@@ -50,9 +46,7 @@ We implement the game Sudoku including:
 		- Use the buttons on the side to get hints, create a new game or pause the game.
 	
    - How to run (CLI):
-	```
-	dune exec cli/sudoku.exe [COMMAND] [OPTIONS]
-	```
+	```dune exec cli/sudoku.exe [COMMAND] [OPTIONS]```
 	
    - List of CLI commands with options:
 		- init [DIFFICULTY] NAME
