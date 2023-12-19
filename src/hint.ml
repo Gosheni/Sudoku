@@ -54,7 +54,7 @@ module Hint_system = struct
     | Block -> "block"
     | Single -> "single"
     | Incorrect -> "incorrect"
-    [@@coverage off]
+  [@@coverage off]
 
   let get_forced_moves (possib : t) : (coordinate * int * forced_source) list =
     Map.fold possib ~init:[] ~f:(fun ~key:row_idx ~data:row acc ->

@@ -9,8 +9,13 @@ module Hint_system : sig
   val make_possibility_sets : Board.Sudoku_board.t -> t
   (** Transform a sudoku board into a markup by finding all possible moves at every space on the board *)
 
-  type forced_source = Row | Col | Block | Single | Incorrect
-  (** hints are forced moves from either a certain section, being the only option or having a mistake *)
+  type forced_source =
+    | Row
+    | Col
+    | Block
+    | Single
+    | Incorrect
+        (** hints are forced moves from either a certain section, being the only option or having a mistake *)
 
   val forced_source_to_string : forced_source -> string
   (** function to convert forced_source to string *)
@@ -24,7 +29,7 @@ module Hint_system : sig
   (** Apply crook's algorithm (see https://www.ams.org/notices/200904/rtx090400460p.pdf) to eliminate
         more possibilities from the markup. This lets us run forced_moves again and get more information 
         from the board without guessing *)
-  
+
   val get_best_guess : t -> coordinate
   (** Take a markup and return the coordinates of the cell with the fewest possible entries *)
 end

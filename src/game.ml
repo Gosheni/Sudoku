@@ -30,7 +30,8 @@ let do_move (board : Sudoku_board.t) (move : move) :
   | Some (Volatile _ | Empty), Some move_value ->
       let new_board = set board move.x move.y @@ Volatile move_value in
       if is_valid new_board then Ok new_board else Error Invalid_position
-      [@@ coverage off]
+[@@coverage off]
+
 let make_guess_suggestion possibs : hint =
   let make_guess_desc (possib_guesses : int list) : string =
     "This cell can contain any of the following values: "
@@ -44,7 +45,6 @@ let make_guess_suggestion possibs : hint =
   let desc = make_guess_desc possib_guesses in
   let new_move = { x = best_row; y = best_col; value = None } in
   Suggest_guess (new_move, desc)
-  
 
 let describe_hint (generated_hint : hint) : string =
   match generated_hint with
@@ -85,7 +85,7 @@ let describe_hint (generated_hint : hint) : string =
              incorrect cell somewhere"
       in
       intro ^ desc
-      [@@ coverage off]
+[@@coverage off]
 
 let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
   match Sudoku_board.solve_with_unique_solution board with
@@ -96,7 +96,8 @@ let generate_hint ?(use_crooks : bool option) (board : Sudoku_board.t) : hint =
       if Sudoku_board.is_solved board then Already_solved
       else
         let possibile_moves = Hint_system.make_possibility_sets board in
-        let forced_moves : (Hint_system.coordinate * int * Hint_system.forced_source) list =
+        let forced_moves :
+            (Hint_system.coordinate * int * Hint_system.forced_source) list =
           Hint_system.get_forced_moves possibile_moves
         in
         if List.length forced_moves = 0 then

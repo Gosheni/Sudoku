@@ -50,8 +50,7 @@ let make_move (game : Configuration.game) (v : int option) r c =
         (match Configuration.finish_game game true with
         | Ok () -> Stdio.print_endline "Game finished and recorded\n"
         | Error msg -> Stdio.print_endline ("Error: " ^ msg));
-        Configuration.update_name_for_highscore game.name game.name
-        )
+        Configuration.update_name_for_highscore game.name game.name)
       else Configuration.update_game game board
   | Error e -> (
       match e with
@@ -61,9 +60,7 @@ let make_move (game : Configuration.game) (v : int option) r c =
 
 let init_with (name : string) (difficulty : int) =
   let current_board =
-    Sudoku_board.generate_unsolved
-      (Sudoku_board.generate_random ())
-      difficulty
+    Sudoku_board.generate_unsolved (Sudoku_board.generate_random ()) difficulty
   in
   match Configuration.add_game name 50 current_board with
   | None -> raise GameWithNameAlreadyExists
