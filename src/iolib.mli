@@ -15,7 +15,12 @@ module Configuration : sig
   (** A type that represents a list of highscore, required for synthesizing json *)
 
 
-  type game
+  type game = {
+    name : string;
+    file_location : string;
+    start_time : float;
+    difficulty : int;
+  }
   (** A type that represents the metadata of a game, including its id and filelocation *)
   
   val load_board_from_json : game -> Board.Sudoku_board.t option

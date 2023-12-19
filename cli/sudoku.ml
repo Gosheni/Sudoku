@@ -50,7 +50,8 @@ let make_move (game : Configuration.game) (v : int option) r c =
         (match Configuration.finish_game game true with
         | Ok () -> Stdio.print_endline "Game finished and recorded\n"
         | Error msg -> Stdio.print_endline ("Error: " ^ msg));
-        Configuration.update_name_for_highscore game.title game.title)
+        Configuration.update_name_for_highscore game.name game.name
+        )
       else Configuration.update_game game board
   | Error e -> (
       match e with
