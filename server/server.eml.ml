@@ -274,6 +274,11 @@ let render _ =
         pause.style.display = "none";
         resume.style.display = "block";
 
+        let newGameButtons = document.getElementsByClassName("new-game-button");
+        newGameButtons[0].disabled = true;
+        newGameButtons[1].disabled = true;
+        newGameButtons[2].disabled = true;
+
         clearInterval(timer);
 
         pauseTime = new Date().getTime();
@@ -291,6 +296,11 @@ let render _ =
         let resume = document.getElementsByClassName("resume-button")[0];
         resume.style.display = "none";
         pause.style.display = "block";
+
+        let newGameButtons = document.getElementsByClassName("new-game-button");
+        newGameButtons[0].disabled = false;
+        newGameButtons[1].disabled = false;
+        newGameButtons[2].disabled = false;
 
         let now = new Date().getTime();
         elapsedTime += (now - pauseTime);
@@ -323,6 +333,8 @@ let render _ =
           })
           .then((json) => {
             startTime = new Date().getTime();
+            pauseTime = 0;
+            elapsedTime = 0;
             populateBoard(json);
             gameFinished = false; // Reset the gameFinished flag
           });
