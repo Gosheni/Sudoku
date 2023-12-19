@@ -121,18 +121,14 @@ module Configuration = struct
             Some { score with username = Some new_name }
           else Some score
     in
-    match List.find config.highscores ~f:find_condition with
-    | Some highscore when Option.is_none highscore.username ->
-        (* Updates the toplist *)
-        let new_highscore = { highscore with username = Some new_name } in
-        let new_highscores =
-          new_highscore
-          :: List.filter config.highscores ~f:(fun highscore ->
-                 highscore |> find_condition |> not)
-        in
-        save_config
-          { config with highscores = new_highscores; most_recent_highscore }
-    | _ -> save_config { config with most_recent_highscore }
+    let new_highscores =
+      List.map config.highscores ~f:(fun score ->
+          if find_condition score then { score with username = Some new_name }
+          else score)
+    in
+
+    save_config
+      { config with highscores = new_highscores; most_recent_highscore }
 
   let get_highscores _ : (highscore * highscore list) option =
     let config = load_config () in
