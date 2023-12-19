@@ -912,7 +912,7 @@ let parse_move request =
 
 let parse_submit request =
   let username =
-    Dream.query request "username" |> Option.value ~default:"Default_name"
+    Dream.query request "username" |> Option.value ~default:"Anonymous"
   in
   match Dream.cookie request "current.game" with
   | None -> create_error "No game to give a name" ""
