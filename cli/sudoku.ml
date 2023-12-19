@@ -61,7 +61,7 @@ let make_move (game : Configuration.game) (v : int option) r c =
 
 let init_with (name : string) (difficulty : int) =
   let current_board =
-    Sudoku_board.generate_degenerate
+    Sudoku_board.generate_unsolved
       (Sudoku_board.generate_random ())
       difficulty
   in

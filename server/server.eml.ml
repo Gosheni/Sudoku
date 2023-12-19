@@ -859,7 +859,7 @@ let parse_initialize request =
     |> Option.map ~f:(fun x -> int_of_string x)
     |> Option.value ~default:50
   in
-  let board = generate_random () |> Fn.flip generate_degenerate difficulty in
+  let board = generate_random () |> Fn.flip generate_unsolved difficulty in
   let board_json : string = serialize board |> Yojson.Safe.to_string in
   let title =
     List.init 20 ~f:(fun _ -> Random.int 10)
