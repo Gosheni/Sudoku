@@ -243,6 +243,9 @@ let render _ =
       }
       function changeSelectedCell(cell) {
         resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
+        if (!cell) {
+          cell = 
+        }
         isHighlighted = cell.classList.contains('selected');
         if (!isHighlighted) {
           var cells = document.getElementsByClassName("cell");

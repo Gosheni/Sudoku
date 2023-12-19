@@ -9,10 +9,10 @@ We implement the game Sudoku including:
    - A high score system based on time taken to complete a game.  
 
    - A hint system    
-      - Hint system will use non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board  
-      - Hint system will also explain what information a player would look at to arrive at the move being hinted.  
-      - If no determinate moves can be found, hint system will recommend guesses with least variability. 
-      - Hint system will use preemptive sets to find complicated moves ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf)).  
+      - Hint system uses non-backtracking sudoku solvers to guarantee the hint is something a perfect player could come up with, with the info already on the board  
+      - Hint system also explain what information a player would look at to arrive at the move being hinted.  
+      - If no determinate moves can be found, hint system recommends guesses with the least variability. 
+      - For details of the algorithm used by our hint system ([see linked paper](https://www.ams.org/notices/200904/rtx090400460p.pdf)).  
 
    - Functionality to save and load boards, of the users desired difficulty.
 
@@ -58,7 +58,7 @@ We implement the game Sudoku including:
 		- init [DIFFICULTY] NAME
 			- creates a new game with the given NAME, optionally takes an integer 1-70 determining how difficult the game will be (higher means more difficult)
 			- prints the newly created board
-		- move ROW COL VALUE
+		- move VALUE ROW COL
 			- tries to place value at the specified row and column
 			- if move is valid, updates the board and prints the new one
 			- if move is invalid, tells the user why
