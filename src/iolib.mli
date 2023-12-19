@@ -27,8 +27,8 @@ module Configuration : sig
   (** Retrieves a sudoku board and its metadata from the games name/id *)
   val get_most_recent : unit -> (game * Board.Sudoku_board.t) option
   (** Retrieves the most recently created sudoku board and its metadata *)
-  val get_highscores : unit -> highscore list
-  (** Retrieves the most recent highscores *)
+  val get_highscores : unit -> (highscore * highscore list) option 
+  (** Retrieves the most recent highscore and the top 10 *)
   val update_name_for_highscore : string -> string -> unit
   (** Replaces the temporary id associated with a highscore  *)
   val move_game_to_first : string -> Board.Sudoku_board.t option

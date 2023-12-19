@@ -47,9 +47,10 @@ let make_move (game : Configuration.game) (v : int option) r c =
       Stdio.print_endline (Sudoku_board.pretty_print board);
       if Sudoku_board.is_solved board then (
         Stdio.print_endline "Solved the Sudoku game!";
-        match Configuration.finish_game game true with
+        (match Configuration.finish_game game true with
         | Ok () -> Stdio.print_endline "Game finished and recorded\n"
-        | Error msg -> Stdio.print_endline ("Error: " ^ msg))
+        | Error msg -> Stdio.print_endline ("Error: " ^ msg));
+        Configuration.update_name_for_highscore game.title game.title)
       else Configuration.update_game game board
   | Error e -> (
       match e with
@@ -113,12 +114,12 @@ let handle_command command_string command_args =
       | None -> Stdio.print_endline "Unable to load game")
   | "scores", None -> (
       Stdio.print_endline "High scores:";
-      let scores = Configuration.get_highscores () in
-      match scores with
-      | [] -> Stdio.print_endline "Play some games to get some high scores"
-      | recent :: rest ->
+
+      match Configuration.get_highscores () with
+      | None -> Stdio.print_endline "Play some games to get some high scores"
+      | Some (recent, top10) ->
           let _, high_scores =
-            List.fold rest ~init:(1, "") ~f:(fun (idx, acc_str) highscore ->
+            List.fold top10 ~init:(1, "") ~f:(fun (idx, acc_str) highscore ->
                 ( idx + 1,
                   acc_str ^ Int.to_string idx ^ ". "
                   ^ Option.value highscore.username ~default:highscore.id
@@ -127,6 +128,7 @@ let handle_command command_string command_args =
                   ^ "\n" ))
           in
           Stdio.print_endline high_scores;
+          (* As the top10 is nonempty exists a most recent highscore *)
           Stdio.print_endline
             ("Most recent game: \n"
             ^ Option.value recent.username ~default:recent.id
@@ -142,7 +144,8 @@ let handle_command command_string command_args =
       ()
   | ("hint" | "solve" | "scores" | "print" | "list"), Some _ ->
       Stdio.print_endline
-        "Unexpected arguments provided for hint, solve, scores, print, or list command"
+        "Unexpected arguments provided for hint, solve, scores, print, or list \
+         command"
   | ("move" | "remove" | "load" | "init"), _ ->
       Stdio.print_endline
         "Invalid arguments for init, move, remove, save, or load command"

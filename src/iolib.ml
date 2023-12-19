@@ -22,10 +22,14 @@ module Configuration = struct
   }
   [@@deriving equal, yojson]
 
-  type t = { highscores : highscore_list; games : game list }
+  type t = {
+    highscores : highscore_list;
+    most_recent_highscore : highscore option;
+    games : game list;
+  }
   [@@deriving yojson]
 
-  let empty = { highscores = []; games = [] }
+  let empty = { highscores = []; most_recent_highscore = None; games = [] }
   let location = "sudoku.config"
 
   let save_board_to_json game data =
@@ -34,7 +38,7 @@ module Configuration = struct
       Sudoku_board.serialize data |> Yojson.Safe.to_file filename
     else failwith "Invalid filename"
 
-  let delete_game game =
+  let delete_game_file game =
     let filename = game.file_location in
     if
       String.contains filename '/'
@@ -78,8 +82,7 @@ module Configuration = struct
         }
       in
       save_board_to_json game board;
-      save_config
-        { highscores = config.highscores; games = game :: config.games };
+      save_config { config with games = game :: config.games };
       Some game
 
   let get_game_with_name (name : string) : game option =
@@ -108,20 +111,33 @@ module Configuration = struct
     let find_condition highscore =
       String.(highscore.id = id && Option.is_none highscore.username)
     in
+
+    (* Updates the most recent highscore *)
+    let most_recent_highscore =
+      match config.most_recent_highscore with
+      | None -> None
+      | Some score ->
+          if String.(score.id = id) then
+            Some { score with username = Some new_name }
+          else Some score
+    in
     match List.find config.highscores ~f:find_condition with
     | Some highscore when Option.is_none highscore.username ->
+        (* Updates the toplist *)
         let new_highscore = { highscore with username = Some new_name } in
         let new_highscores =
           new_highscore
           :: List.filter config.highscores ~f:(fun highscore ->
                  highscore |> find_condition |> not)
         in
-        save_config { config with highscores = new_highscores }
-    | _ -> ()
+        save_config
+          { config with highscores = new_highscores; most_recent_highscore }
+    | _ -> save_config { config with most_recent_highscore }
 
-  let get_highscores _ : highscore list =
+  let get_highscores _ : (highscore * highscore list) option =
     let config = load_config () in
-    config.highscores
+    config.most_recent_highscore
+    |> Option.map ~f:(Fn.flip Tuple2.create config.highscores)
 
   (* keep only best 10 scores *)
   let add_new_score (score : highscore) : highscore list =
@@ -138,8 +154,7 @@ module Configuration = struct
         let new_games_list =
           List.filter config.games ~f:(fun g -> String.(g.name <> game_name))
         in
-        save_config
-          { highscores = config.highscores; games = game :: new_games_list };
+        save_config { config with games = game :: new_games_list };
         load_board_from_json game
 
   let finish_game (game : game) (save_highscore : bool) : (unit, string) result
@@ -152,23 +167,26 @@ module Configuration = struct
           List.filter config.games ~f:(fun other_game ->
               String.(other_game.name <> game.name))
         in
-        let new_highscores_list =
-          if save_highscore then
-            let time_spent = Float.(Core_unix.time () - game.start_time) in
-            let new_highscore : highscore =
-              {
-                id = game.name;
-                username = None;
-                difficulty = game.difficulty;
-                total_time = time_spent;
-              }
-            in
-            add_new_score new_highscore
-          else config.highscores
-        in
 
-        save_config { highscores = new_highscores_list; games = new_games_list };
-        delete_game game;
+        if save_highscore then
+          let time_spent = Float.(Core_unix.time () - game.start_time) in
+          let new_highscore : highscore =
+            {
+              id = game.name;
+              username = None;
+              difficulty = game.difficulty;
+              total_time = time_spent;
+            }
+          in
+
+          save_config
+            {
+              highscores = add_new_score new_highscore;
+              most_recent_highscore = Some new_highscore;
+              games = new_games_list;
+            }
+        else save_config { config with games = new_games_list };
+        delete_game_file game;
         Ok ()
 
   let get_all_names _ : string list =

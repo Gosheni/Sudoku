@@ -581,7 +581,7 @@ let render _ =
             .then((json) => {
               console.log("scores");
               console.log(json);
-              if (json.length <= 0) {
+              if (!json["recent"]) {
                 var scoreMessage = document.getElementsByClassName("score-message")[0];
                 if (scoreMessage.classList.contains("score-message-hidden")) {
                   scoreMessage.classList.remove("score-message-hidden");
@@ -590,7 +590,7 @@ let render _ =
                 var scoreMessage = document.getElementsByClassName("score-message")[0];
                 scoreMessage.classList.add("score-message-hidden");
 
-                var score_recent = json[0];
+                var score_recent = json.recent;
                 var scoreRow = document.getElementById("score recent");
                 if (scoreRow.classList.contains("score-hidden")) {
                   scoreRow.classList.remove("score-hidden");
@@ -601,9 +601,13 @@ let render _ =
                 var scoreName = document.getElementById("score recent name");
                 scoreName.textContent = score_recent.username;
                 var scoreScore = document.getElementById("score recent score");
-                scoreScore.textContent = score_recent["total_time"].toString();
-                for (var i = 1; i < json.length; i++) {
-                  var score = json[i];
+                scoreScore.textContent = score_recent.total_time.toString();
+              }
+
+              if (json["top10"]) {
+                let top10 = json.top10;
+                for (var i = 1; i <= top10.length; i++) {
+                  var score = json.top10[i-1];
                   console.log(score);
                   var scoreRow = document.getElementById("score " + i);
                   if (scoreRow.classList.contains("score-hidden")) {
@@ -613,10 +617,9 @@ let render _ =
                   var scoreName = document.getElementById("score " + i + " name");
                   scoreName.textContent = score.username;
                   var scoreScore = document.getElementById("score " + i + " score");
-                  scoreScore.textContent = score["total_time"].toString();
+                  scoreScore.textContent = score.total_time.toString();
                 }
               }
-              
           });
         }
 
@@ -906,8 +909,19 @@ let parse_submit request =
       create_error "Highscore submitted" ""
 
 let parse_score _ =
-  Configuration.get_highscores ()
-  |> Configuration.highscore_list_to_yojson |> Yojson.Safe.to_string
+  let construct (recent: string) (top10: string) = 
+    "{\"recent\":" ^ recent ^ ", 
+    \"top10\":" ^ top10 ^ "}"
+  in 
+  (match Configuration.get_highscores () with 
+  | None -> "{}"
+  | Some (recent, top10) -> 
+    let top10Str = top10 |> Configuration.highscore_list_to_yojson |> Yojson.Safe.to_string in 
+    let recentStr = recent |> Configuration.highscore_to_yojson |> Yojson.Safe.to_string in 
+    Dream.log "%s" top10Str;
+    Dream.log "%s" recentStr;
+    Dream.log "%s" (construct recentStr top10Str);
+    construct recentStr top10Str)
   |> Dream.json
 
 let get_api path = Dream.get ("/api/v1/" ^ path)
