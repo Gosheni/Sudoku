@@ -4,7 +4,7 @@ open Iolib
 open Game
 
 let single_cell id = 
-    <td class="cell" id="<%s id %>" onclick="changeSelectedCell(this)"/>
+    <td class="cell <%s if String.(id = "00") then "selected" else ""%>" id="<%s id %>" onclick="changeSelectedCell(this)"/>
 
 let number_button number =
   <td class="numberButton" id="numberButton<%s number %>" onclick="numberButtonWasTapped(this)"><%s (number)%></td>
@@ -243,9 +243,6 @@ let render _ =
       }
       function changeSelectedCell(cell) {
         resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
-        if (!cell) {
-          cell = 
-        }
         isHighlighted = cell.classList.contains('selected');
         if (!isHighlighted) {
           var cells = document.getElementsByClassName("cell");
@@ -639,7 +636,6 @@ let render _ =
         }
 
         updateHighScores();
-
         document.addEventListener('keydown', function(event) {
             resetErrorsAndHints(); // included whereever an action is taken, to cancel hint highlights
 
